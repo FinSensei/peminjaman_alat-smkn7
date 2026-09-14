@@ -25,11 +25,6 @@
             <h1 class="text-3xl font-extrabold leading-tight">Sistem<br>Peminjaman Alat</h1>
             <p class="text-blue-200 text-sm mt-2">Peminjaman Alat — cepat, tercatat, terpantau.</p>
         </div>
-        <ul class="space-y-3 text-sm fade-up fade-up-2">
-            <li class="flex gap-2 items-center"><span class="w-6 h-6 bg-white/15 rounded-lg flex items-center justify-center">🛠</span> Admin: kelola alat, user &amp; stok</li>
-            <li class="flex gap-2 items-center"><span class="w-6 h-6 bg-white/15 rounded-lg flex items-center justify-center">✅</span> Petugas: setujui &amp; catat kembali</li>
-            <li class="flex gap-2 items-center"><span class="w-6 h-6 bg-white/15 rounded-lg flex items-center justify-center">🎒</span> Peminjam: katalog &amp; riwayat</li>
-        </ul>
     </div>
     <div class="w-full md:w-1/2 p-10" x-data="{ lihat: false }">
         <h2 class="text-2xl font-extrabold text-gray-800 fade-up">Selamat datang 👋</h2>

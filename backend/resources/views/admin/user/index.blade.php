@@ -13,6 +13,7 @@
         </div>
     @endif
 
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
         <div class="p-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
             <h3 class="text-lg font-bold text-gray-800">Daftar Pengguna Sistem</h3>
             <div class="flex items-center gap-3 w-full md:w-auto">

@@ -100,35 +100,21 @@
 
                             <td class="py-3 px-4 border-b">
                                 <div class="flex flex-col space-y-2">
-                                    <!-- Form Ubah Status Cepat -->
-                                    <form action="{{ route('admin.peminjaman.updateStatus', $peminjaman->id) }}"
-                                        method="POST" class="flex items-center space-x-1">
-                                        @csrf
-                                        @method('PUT')
-
-                                        <select name="status" onchange="if(confirm('Yakin ubah status ke ' + this.value + '?')) this.form.submit(); else this.value='{{ $peminjaman->status }}';"
-                                            class="text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none">
-                                            <option value="diajukan"
-                                                {{ $peminjaman->status == 'diajukan' ? 'selected' : '' }}>
-                                                Diajukan
-                                            </option>
-
-                                            <option value="dipinjam"
-                                                {{ $peminjaman->status == 'dipinjam' ? 'selected' : '' }}>
-                                                Dipinjam
-                                            </option>
-
-                                            <option value="dikembalikan"
-                                                {{ $peminjaman->status == 'dikembalikan' ? 'selected' : '' }}>
-                                                Dikembalikan
-                                            </option>
-
-                                            <option value="telat"
-                                                {{ $peminjaman->status == 'telat' ? 'selected' : '' }}>
-                                                Telat
-                                            </option>
-                                        </select>
-                                    </form>
+                                    @if($peminjaman->status === 'dikembalikan')
+                                        <span class="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-100 border border-emerald-200 rounded-full px-3 py-1 shadow-sm w-full justify-center text-center">Sudah Dikembalikan</span>
+                                    @elseif($peminjaman->status === 'telat')
+                                        <button type="button" onclick="openKembali({{ $peminjaman->id }}, '{{ $peminjaman->tgl_kembali_plan }}')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-semibold transition w-full">Proses Kembali</button>
+                                    @else
+                                        <form action="{{ route('admin.peminjaman.updateStatus', $peminjaman->id) }}" method="POST" class="flex items-center space-x-1 status-form" data-current="{{ $peminjaman->status }}" data-id="{{ $peminjaman->id }}" data-plan="{{ $peminjaman->tgl_kembali_plan }}">
+                                            @csrf
+                                            @method('PUT')
+                                            <select name="status" onchange="statusGanti(this)" class="text-xs font-semibold border border-blue-200 bg-white rounded-lg px-2 py-1.5 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full">
+                                                <option value="diajukan" {{ $peminjaman->status == 'diajukan' ? 'selected' : '' }}>Diajukan</option>
+                                                <option value="dipinjam" {{ $peminjaman->status == 'dipinjam' ? 'selected' : '' }}>Dipinjam</option>
+                                                <option value="dikembalikan">Dikembalikan</option>
+                                            </select>
+                                        </form>
+                                    @endif
 
                                     <!-- Tombol Hapus -->
                                     <form action="{{ route('admin.peminjaman.destroy', $peminjaman->id) }}"
@@ -161,4 +147,44 @@
             {{ $peminjamans->links() }}
         </div>
     </div>
+    <!-- Modal Proses Kembali (kondisi + denda) -->
+    <div id="kembaliModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div class="bg-white rounded-xl shadow-lg w-full max-w-md p-5">
+            <h3 class="font-bold text-gray-800 mb-1">Proses Pengembalian</h3>
+            <p id="kembaliInfo" class="text-xs rounded-lg px-3 py-2 mb-3"></p>
+            <form id="kembaliForm" method="POST" action="">
+                @csrf
+                @method('PUT')
+                <input type="hidden" name="status" value="dikembalikan">
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Kondisi Kembali (kosong = bagus)</label>
+                <input type="text" name="kondisi_kembali" placeholder="bagus" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 mb-3 focus:outline-none">
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Denda manual (kosong = otomatis)</label>
+                <input type="number" name="denda" min="0" placeholder="otomatis" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none">
+                <div class="flex gap-2 mt-4">
+                    <button type="button" onclick="closeKembali()" class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 text-sm font-semibold rounded-lg">Batal</button>
+                    <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script>
+        var kembaliBase = "{{ url('admin/peminjaman') }}";
+        var dendaHari = {{ config('inventory.denda_per_hari', 5000) }};
+        function statusGanti(sel) {
+            var form = sel.closest('form');
+            if (sel.value === 'dikembalikan') { openKembali(form.dataset.id, form.dataset.plan); sel.value = form.dataset.current; return; }
+            if (confirm('Ubah status ke ' + sel.value + '?')) { form.submit(); } else { sel.value = form.dataset.current; }
+        }
+        function openKembali(id, plan) {
+            document.getElementById('kembaliForm').action = kembaliBase + '/' + id + '/status';
+            var p = new Date(plan); p.setHours(0,0,0,0);
+            var n = new Date(); n.setHours(0,0,0,0);
+            var hari = Math.max(0, Math.round((n - p) / 86400000));
+            var info = document.getElementById('kembaliInfo');
+            if (hari > 0) { info.className = 'text-xs rounded-lg px-3 py-2 mb-3 bg-red-50 border border-red-200 text-red-700'; info.innerHTML = 'Telat ' + hari + ' hari — status otomatis jadi Telat, denda Rp' + (hari * dendaHari).toLocaleString('id-ID'); }
+            else { info.className = 'hidden'; info.textContent = ''; }
+            document.getElementById('kembaliModal').classList.remove('hidden');
+        }
+        function closeKembali() { document.getElementById('kembaliModal').classList.add('hidden'); }
+    </script>
 @endsection

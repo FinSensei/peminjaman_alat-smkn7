@@ -11,8 +11,14 @@
 .card-lift { transition: transform .25s ease, box-shadow .25s ease; }
 .card-lift:hover { transform: translateY(-4px); box-shadow: 0 12px 24px -8px rgba(0,0,0,.25); }
 </style>
+    <style>
+        table thead tr { background-color: #1f2937 !important; }
+        table thead th { color: #ffffff !important; border-color: #374151 !important; }
+        table.thead-terang thead tr { background-color: transparent !important; }
+        table.thead-terang thead th { color: #6b7280 !important; border-color: transparent !important; }
+    </style>
 </head>
-<body class="bg-gray-100 font-sans antialiased">
+<body class="bg-gradient-to-b from-blue-200 via-gray-200 to-gray-300 font-sans antialiased">
 <div class="flex h-screen overflow-hidden">
 
     <!-- SIDEBAR -->
@@ -26,8 +32,8 @@
             </div>
         </div>
         <nav class="flex-1 p-4 space-y-2">
-            <p class="px-4 pt-1 text-[11px] font-bold uppercase tracking-wider text-gray-500">Master Data</p>
             <a href="{{ route('admin.dashboard') }}" class="block px-4 py-2 rounded-lg transition {{ request()->routeIs('admin.dashboard') ? 'bg-gray-900 text-white font-medium shadow border-l-4 border-blue-500' : 'text-gray-400 hover:bg-gray-700 hover:text-white border-l-4 border-transparent' }}"><span class="mr-2">🏠</span>Dashboard</a>
+            <p class="px-4 pt-1 text-[11px] font-bold uppercase tracking-wider text-gray-500">Master Data</p>
             <a href="{{ route('admin.alat.index') }}" class="block px-4 py-2 rounded-lg transition {{ request()->routeIs('admin.alat*') ? 'bg-gray-900 text-white font-medium shadow border-l-4 border-blue-500' : 'text-gray-400 hover:bg-gray-700 hover:text-white border-l-4 border-transparent' }}"><span class="mr-2">📦</span>Kelola Alat</a>
             <a href="{{ route('admin.user.index') }}" class="block px-4 py-2 rounded-lg transition {{ request()->routeIs('admin.user*') ? 'bg-gray-900 text-white font-medium shadow border-l-4 border-blue-500' : 'text-gray-400 hover:bg-gray-700 hover:text-white border-l-4 border-transparent' }}"><span class="mr-2">👥</span>Kelola User</a>
             <a href="{{ route('admin.kategori.index') }}" class="block px-4 py-2 rounded-lg transition {{ request()->routeIs('admin.kategori*') ? 'bg-gray-900 text-white font-medium shadow border-l-4 border-blue-500' : 'text-gray-400 hover:bg-gray-700 hover:text-white border-l-4 border-transparent' }}"><span class="mr-2">📁</span>Kelola Kategori</a>
@@ -93,6 +99,10 @@
             </div>
         </div>
         <nav class="flex-1 p-4 space-y-2">
+        <a href="{{ route('peminjam.dashboard') }}"
+        class="block px-4 py-2 rounded-lg transition {{
+        request()->routeIs('peminjam.dashboard*') ? 'bg-gray-900 text-white font-medium shadow border-l-4 border-blue-500' : 'text-gray-400 hover:bg-gray-700 hover:text-white border-l-4 border-transparent' }}"><span class="mr-2">🏠</span>Dashboard</a>
+
         <a href="{{ route('peminjam.katalog') }}"
         class="block px-4 py-2 rounded-lg transition {{
         request()->routeIs('peminjam.katalog*') ? 'bg-gray-900 text-white font-medium shadow border-l-4 border-blue-500' : 'text-gray-400 hover:bg-gray-700 hover:text-white border-l-4 border-transparent' }}"><span class="mr-2">📦</span>Katalog Alat</a>
@@ -127,12 +137,12 @@
     <div id="konten-scroll" class="flex-1 flex flex-col overflow-y-auto">
 
         <!-- NAVBAR ATAS -->
-        <header class="bg-white shadow-sm h-16 flex items-center justify-between px-6 pt-2 z-10">
-            <div class="text-lg font-semibold text-gray-800">
+        <header class="shadow-lg rounded-b-2xl h-16 shrink-0 flex items-center justify-between px-6 z-10 text-white @if(auth()->user()->role === 'admin') bg-gradient-to-r from-blue-700 to-blue-500 @elseif(auth()->user()->role === 'petugas') bg-gradient-to-r from-emerald-700 to-emerald-500 @else bg-gradient-to-r from-purple-700 to-purple-500 @endif">
+            <div class="text-lg font-semibold text-white">
                 @yield('header-title', 'Dashboard')
             </div>
             <div class="flex items-center gap-4">
-                <div class="text-sm text-gray-500">
+                <div class="text-sm text-white/80">
                     {{ \Carbon\Carbon::now()->translatedFormat('l, d F Y') }}
                 </div>
                 @php($notifBelum = \App\Models\Notifikasi::where('user_id', auth()->id())->where('dibaca', false)->count())
