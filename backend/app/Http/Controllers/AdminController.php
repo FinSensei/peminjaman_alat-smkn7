@@ -401,58 +401,52 @@ class AdminController extends Controller
         }
     }
 
-    // 4. Memperbarui status peminjaman (Misal: dari diajukan => dipinjam / selesai)
+    // 4. Memperbarui status peminjaman (dikembalikan = final terkunci; telat otomatis)
     public function updateStatusPeminjaman(Request $request, $id)
     {
-        $peminjaman = Peminjaman::with('detailPinjam.alat')->findOrFail($id);
-        
+        $p = Peminjaman::with('detailPinjam.alat')->findOrFail($id);
+        if ($p->status === 'dikembalikan') {
+            return redirect()->back()->with('error', 'Sudah dikembalikan, status tidak bisa diubah lagi.');
+        }
         $request->validate([
-            'status' => 'required|in:diajukan,dipinjam,dikembalikan,telat', // sesuaikan enum status Anda
+            'status' => 'required|in:diajukan,dipinjam,dikembalikan',
+            'kondisi_kembali' => 'nullable|string|max:255',
+            'denda' => 'nullable|integer|min:0',
         ]);
-
         DB::beginTransaction();
         try {
-            $statusLama = $peminjaman->status;
-            $statusBaru = $request->status;
-
-            // 1. LOGIKA JIKA BARANG BARU DIPINJAM (Mengurangi Stok)
-            if ($statusLama != 'dipinjam' && $statusBaru == 'dipinjam') {
-                foreach ($peminjaman->detailPinjam as $detail) {
-                    $alat = $detail->alat;
-                    if ($alat->stok < $detail->jumlah) {
-                        throw new \Exception("Stok alat {$alat->nama_alat} tidak mencukupi.");
-                    }
-                    $alat->decrement('stok', $detail->jumlah);
-                }
-            } 
-            
-            // 2. LOGIKA JIKA STATUS DIUBAH MENJADI SELESAI / DIKEMBALIKAN (Mengembalikan Stok + ISI TABEL PENGEMBALIAN)
-            elseif ($statusLama == 'dipinjam' && ($statusBaru == 'dikembalikan' || $statusBaru == 'dikembalikan') && !$peminjaman->pengembalian()->exists()) {
-                
-                // >>> PERBAIKAN: Otomatis buat data di tabel pengembalians <<<
-                $tglPlan = \Carbon\Carbon::parse($peminjaman->tgl_kembali_plan)->startOfDay();
-                $hariTelat = \Carbon\Carbon::now()->startOfDay()->greaterThan($tglPlan) ? \Carbon\Carbon::now()->startOfDay()->diffInDays($tglPlan) : 0;
-                $dendaAuto = $hariTelat * config('inventory.denda_per_hari', 5000);
-                Pengembalian::create([
-                    'peminjaman_id'   => $peminjaman->id,
-                    'tgl_kembali'     => now(),
-                    'kondisi_kembali' => 'bagus', // default jika diubah lewat status cepat
-                    'denda'           => $dendaAuto,
-                    'petugas_id'      => auth()->id(),
-                ]);
-
-                // Kembalikan stok barang ke inventaris
-                foreach ($peminjaman->detailPinjam as $detail) {
-                    $detail->alat->increment('stok', $detail->jumlah);
-                }
+            $lama = $p->status;
+            $baru = $request->status;
+            if (in_array($lama, ['dipinjam', 'telat']) && $baru === 'diajukan') {
+                throw new \Exception('Tidak bisa kembali ke Diajukan. Selesaikan lewat pengembalian.');
             }
-
-            // Update status di tabel peminjaman
-            $peminjaman->update(['status' => $statusBaru]);
-            
+            if ($lama === 'diajukan' && $baru === 'dipinjam') {
+                foreach ($p->detailPinjam as $d) {
+                    $a = Alat::lockForUpdate()->find($d->alat_id);
+                    if (!$a || $a->stok < $d->jumlah) { throw new \Exception('Stok tidak mencukupi.'); }
+                    $a->decrement('stok', $d->jumlah);
+                }
+                $p->update(['status' => 'dipinjam']);
+            } elseif ($baru === 'dikembalikan' && !$p->pengembalian()->exists()) {
+                $plan = \Carbon\Carbon::parse($p->tgl_kembali_plan)->startOfDay();
+                $now = \Carbon\Carbon::now()->startOfDay();
+                $telat = $now->greaterThan($plan) ? $now->diffInDays($plan) : 0;
+                $auto = $telat * config('inventory.denda_per_hari', 5000);
+                Pengembalian::create([
+                    'peminjaman_id' => $p->id, 'tgl_kembali' => now(),
+                    'kondisi_kembali' => $request->filled('kondisi_kembali') ? $request->kondisi_kembali : 'bagus',
+                    'denda' => $request->filled('denda') ? (int) $request->denda : $auto,
+                    'petugas_id' => auth()->id(),
+                ]);
+                if (in_array($lama, ['dipinjam', 'telat'])) {
+                    foreach ($p->detailPinjam as $d) { Alat::lockForUpdate()->find($d->alat_id)?->increment('stok', $d->jumlah); }
+                }
+                $p->update(['status' => $telat > 0 ? 'telat' : 'dikembalikan']);
+            } else {
+                $p->update(['status' => $baru]);
+            }
             DB::commit();
-            return redirect()->back()->with('success', 'Status peminjaman diperbarui dan riwayat pengembalian tercatat.');
-
+            return redirect()->back()->with('success', 'Status peminjaman diperbarui.');
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->with('error', $e->getMessage());

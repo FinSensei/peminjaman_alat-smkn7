@@ -43,7 +43,8 @@ class PetugasController extends Controller
             }
         });
 
-        return view('petugas.dashboard', compact('stats', 'antrean'));
+        $riwayatBaru = Pengembalian::with(['peminjaman.user', 'peminjaman.detailPinjam.alat'])->latest()->take(8)->get();
+        return view('petugas.dashboard', compact('stats', 'antrean', 'riwayatBaru'));
     }
 
    public function indexPeminjaman(Request $request)
@@ -204,7 +205,7 @@ class PetugasController extends Controller
         // Data untuk form animated: peminjaman yang masih dipinjam + search horizontal
         $searchPending = $request->input('search_pending');
         $pendingPeminjamans = Peminjaman::with(['user', 'detailPinjam.alat'])
-            ->where('status', 'dipinjam')
+            ->whereIn('status', ['dipinjam', 'telat'])
             ->when($searchPending, function($q) use ($searchPending) {
                 $q->whereHas('user', function($uq) use ($searchPending) {
                     $uq->where('name', 'like', "%{$searchPending}%");
@@ -338,7 +339,7 @@ class PetugasController extends Controller
     }
 
     // =============================
-    // REQEDIT - AJUKAN PERBAIKAN KE ADMIN (TAMBAHAN, TIDAK UBAH METHOD LAMA)
+    // REQEDIT - AJUKAN PERBAIKAN KE ADMIN 
     // =============================
     public function ajukanPerbaikan(Request $request, $id)
     {
