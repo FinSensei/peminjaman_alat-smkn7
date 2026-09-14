@@ -32,10 +32,8 @@
                 </h2>
                 <p class="text-sm text-gray-500 mt-1">
                     Geser ke kanan. Klik
-                    <span class="font-semibold text-emerald-600">Dikembalikan</span>
-                    /
-                    <span class="font-semibold text-amber-600">Telat</span>
-                    untuk buka form detail
+                    <span class="font-semibold text-blue-600">Kembalikan</span>
+                    untuk buka form — telat/tidaknya ditentukan otomatis dari rencana kembali
                 </p>
             </div>
 
@@ -107,26 +105,15 @@
                             </div>
 
                             {{-- Tombol aksi --}}
-                            <div class="flex gap-2 mt-auto">
+                            <div class="mt-auto">
                                 <button
                                     type="button"
                                     data-role="open-single-form"
                                     data-id="{{ $peminjaman->id }}"
-                                    data-status="dikembalikan"
                                     data-name="{{ addslashes($peminjaman->user->name ?? '-') }}"
-                                    class="flex-1 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition"
+                                    class="w-full py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition"
                                 >
-                                    Dikembalikan
-                                </button>
-                                <button
-                                    type="button"
-                                    data-role="open-single-form"
-                                    data-id="{{ $peminjaman->id }}"
-                                    data-status="telat"
-                                    data-name="{{ addslashes($peminjaman->user->name ?? '-') }}"
-                                    class="flex-1 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition"
-                                >
-                                    Telat
+                                    Kembalikan
                                 </button>
                             </div>
                         </div>
@@ -179,8 +166,8 @@
             </div>
 
             {{-- Modal body --}}
-            <div class="p-5">
-                <div class="mb-4">
+            <div class="px-5 pt-2 pb-5">
+                <div class="mb-4" id="badgeWrap">
                     <span
                         id="modalBadge"
                         class="inline-flex px-3 py-1 rounded-full text-xs font-bold"
@@ -196,18 +183,14 @@
                     @csrf
                     <input type="hidden" name="status_pengembalian" id="modalStatus" value="">
 
-                    {{-- Tanggal kembali --}}
+                    {{-- Tanggal kembali: otomatis hari ini, dikunci --}}
                     <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1">
                             Tanggal Kembali
                         </label>
-                        <input
-                            type="date"
-                            name="tgl_kembali"
-                            value="{{ date('Y-m-d') }}"
-                            required
-                            class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
-                        >
+                        <div class="w-full px-3 py-2 text-sm bg-gray-100 border border-gray-200 rounded-lg text-gray-700">
+                            Hari ini ({{ date('d-m-Y') }}) 
+                        </div>
                     </div>
 
                     {{-- Kondisi --}}
@@ -518,33 +501,28 @@
             }
         });
 
-        function openSingleForm(id, status, name){
+        function openSingleForm(id, name){
             document.getElementById('modalForm').action = '/petugas/pengembalian/' + id;
-            document.getElementById('modalStatus').value = status;
             document.getElementById('modalSubtitle').textContent = name + ' - ID #' + id;
-
             const badge = document.getElementById('modalBadge');
             const denda = document.getElementById('modalDenda');
             const hint  = document.getElementById('modalHint');
-            const title = document.getElementById('modalTitle');
-
-            if(status === 'dikembalikan'){
-                title.textContent = 'Proses Dikembalikan';
-                badge.textContent = 'Dikembalikan';
-                badge.className = 'inline-flex px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700';
+            document.getElementById('modalTitle').textContent = 'Proses Pengembalian';
+            const planVal = document.getElementById('tgl-plan-' + id)?.dataset.plan;
+            let ht = 0;
+            if(planVal){ const p=new Date(planVal); const t=new Date(); t.setHours(0,0,0,0); p.setHours(0,0,0,0); ht=Math.max(0, Math.ceil((t-p)/86400000)); }
+            if(ht > 0){
+                document.getElementById('badgeWrap').style.display = '';
+                badge.style.display = '';
+                badge.textContent = 'Telat ' + ht + ' hari';
+                badge.className = 'inline-flex px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700';
+                denda.value = String(ht * {{ config('inventory.denda_per_hari', 5000) }});
+                hint.classList.remove('hidden');
+            } else {
+                document.getElementById('badgeWrap').style.display = 'none';
                 denda.value = 0;
                 hint.classList.add('hidden');
-            } else {
-                title.textContent = 'Proses Telat';
-                badge.textContent = 'Telat';
-                badge.className = 'inline-flex px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700';
-                const planVal2 = document.getElementById('tgl-plan-' + id)?.dataset.plan;
-                let ht2 = 1; if(planVal2){ const p=new Date(planVal2); const t=new Date(); t.setHours(0,0,0,0); p.setHours(0,0,0,0); ht2=Math.max(1, Math.ceil((t-p)/86400000)); }
-                denda.value = String(ht2 * {{ config('inventory.denda_per_hari', 5000) }});
-                hint.classList.remove('hidden');
             }
-
-            // reset kustom state on open
             const selOpen = document.getElementById('modalKondisi');
             const inpOpen = document.getElementById('modalKustomInput');
             const hiddenOld = document.getElementById('kustomHidden');
@@ -555,7 +533,6 @@
             document.getElementById('singleFormModal').classList.remove('hidden');
             document.body.style.overflow = 'hidden';
         }
-
         function toggleKustom(val){
             const inp = document.getElementById('modalKustomInput');
             const sel = document.getElementById('modalKondisi');
@@ -602,7 +579,6 @@
             if (singleTrigger) {
                 openSingleForm(
                     singleTrigger.dataset.id,
-                    singleTrigger.dataset.status,
                     singleTrigger.dataset.name || '-'
                 );
             }

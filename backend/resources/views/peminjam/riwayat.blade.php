@@ -17,29 +17,6 @@
 </div>
 @endif
 
-<div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6" data-aos="fade-down">
-    <div class="bg-white rounded-xl shadow-sm p-3 text-center">
-        <div class="text-xs text-gray-500">Total</div>
-        <div class="text-xl font-bold">{{ $stats['total'] }}</div>
-    </div>
-    <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-3 text-center">
-        <div class="text-xs text-yellow-700">Diajukan</div>
-        <div class="text-xl font-bold text-yellow-700">{{ $stats['diajukan'] }}</div>
-    </div>
-    <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-center">
-        <div class="text-xs text-blue-700">Dipinjam</div>
-        <div class="text-xl font-bold text-blue-700">{{ $stats['dipinjam'] }}</div>
-    </div>
-    <div class="bg-red-50 border border-red-200 rounded-xl p-3 text-center">
-        <div class="text-xs text-red-700">Telat</div>
-        <div class="text-xl font-bold text-red-700">{{ $stats['telat'] }}</div>
-    </div>
-    <div class="bg-green-50 border border-green-200 rounded-xl p-3 text-center">
-        <div class="text-xs text-green-700">Dikembalikan</div>
-        <div class="text-xl font-bold text-green-700">{{ $stats['dikembalikan'] }}</div>
-    </div>
-</div>
-
 <div class="bg-white rounded-xl shadow-sm p-6">
     <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
         <h3 class="text-lg font-bold text-gray-800">Riwayat Saya</h3>
@@ -88,7 +65,7 @@
                 @endif
 
                 <div class="bg-gray-50 rounded-lg p-3 mb-3">
-                    <table class="w-full text-sm">
+                    <table class="w-full text-sm thead-terang">
                         <thead>
                             <tr class="text-xs text-gray-500">
                                 <th class="text-left py-1">Alat</th>
@@ -127,7 +104,6 @@
             <div class="text-center py-12">
                 <div class="text-4xl mb-2">📋</div>
                 <div class="text-gray-400 text-sm mb-2">Belum ada riwayat</div>
-                <a href="{{ route('peminjam.katalog') }}" class="text-blue-600 text-sm font-medium hover:underline">Mulai pinjam sekarang &rarr;</a>
             </div>
         @endforelse
     </div>

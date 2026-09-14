@@ -24,27 +24,6 @@
 </div>
 @endif
 
-<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-    <a href="{{ route('peminjam.riwayat') }}" class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-blue-500 hover:shadow-md data-aos="zoom-in" data-aos-delay="0">
-        <div class="text-xs text-gray-500">Total Pinjam</div>
-        <div class="text-2xl font-bold text-gray-800">{{ $stats['total'] }}</div>
-        <div class="text-xs text-blue-600">Lihat riwayat &rarr;</div>
-    </a>
-    <a href="{{ route('peminjam.riwayat', ['status'=>'diajukan']) }}" class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-yellow-500 hover:shadow-md data-aos="zoom-in" data-aos-delay="100">
-        <div class="text-xs text-gray-500">Menunggu</div>
-        <div class="text-2xl font-bold text-yellow-600">{{ $stats['diajukan'] }}</div>
-        <div class="text-xs text-yellow-600">Menunggu ACC</div>
-    </a>
-    <a href="{{ route('peminjam.riwayat', ['status'=>'dipinjam']) }}" class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-blue-600 hover:shadow-md data-aos="zoom-in" data-aos-delay="200">
-        <div class="text-xs text-gray-500">Dipinjam</div>
-        <div class="text-2xl font-bold text-blue-600">{{ $stats['dipinjam'] }}</div>
-    </a>
-    <a href="{{ route('peminjam.riwayat', ['status'=>'telat']) }}" class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-red-500 hover:shadow-md data-aos="zoom-in" data-aos-delay="300">
-        <div class="text-xs text-gray-500">Telat</div>
-        <div class="text-2xl font-bold text-red-600">{{ $stats['telat'] }}</div>
-    </a>
-</div>
-
 <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
     <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
         <h3 class="text-lg font-bold text-gray-800">Katalog Alat Tersedia</h3>
@@ -81,7 +60,7 @@
                     <input type="checkbox" name="alat_id[]" value="{{ $alat->id }}" x-model="terpilih" @change="let inp = $el.closest('div.border').querySelector('input[type=number]'); if (inp) { if (terpilih.includes('{{ $alat->id }}')) { inp.disabled = false; inp.focus(); inp.select(); } else { inp.disabled = true; inp.value = 1; } }" class="cek-alat rounded text-blue-600 w-5 h-5 flex-shrink-0" {{ $isReorder ? 'checked' : '' }}>
                     <div class="flex-1 min-w-0">
                         <div class="font-semibold text-gray-900 text-sm">{{ $alat->nama_alat }}</div>
-                        <div class="text-xs text-gray-500">{{ $alat->kategori->nama_kategori ?? '-' }} &bull; {{ $alat->status_kondisi }}</div>
+                        <div class="text-xs text-gray-500">{{ $alat->kategori->nama_kategori ?? '-' }}</div>
                         <div class="text-xs text-gray-400 truncate">{{ $alat->deskripsi }}</div>
                         <div class="text-xs mt-1">
                             @if($alat->stok <= 3)
