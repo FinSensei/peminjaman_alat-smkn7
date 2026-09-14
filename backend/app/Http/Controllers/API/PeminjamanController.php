@@ -158,6 +158,11 @@ class PeminjamanController extends Controller
             ], 400); 
         } 
  
+        if ($peminjaman->tgl_kembali_plan && \Carbon\Carbon::parse($peminjaman->tgl_kembali_plan)->lt(now()->toDateString())) {
+            $peminjaman->delete();
+            return response()->json(['message' => 'Peminjaman sudah lewat tanggal kembali, otomatis dihapus.'], 200);
+        }
+
         try { 
             DB::transaction(function () use ($peminjaman) { 
                 $peminjaman->update(['status' => 'dipinjam']); 

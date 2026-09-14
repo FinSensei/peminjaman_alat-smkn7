@@ -32,6 +32,9 @@ class PengembalianController extends Controller
  
     public function store(StorePengembalianRequest $request): JsonResponse
     { 
+        $sudahAda = Pengembalian::where("peminjaman_id", $request->peminjaman_id)->exists();
+        if ($sudahAda) { return response()->json(["message" => "Pengembalian sudah ada."], 422); }
+
         try { 
             $pengembalian = DB::transaction(function () use ($request) { 
                 // Kunci baris peminjaman ini selama transaksi agar tidak dimanipulasi proses lain 
