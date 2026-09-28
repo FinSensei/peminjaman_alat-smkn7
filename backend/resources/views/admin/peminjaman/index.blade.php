@@ -4,17 +4,17 @@
 @section('header-title', 'Manajemen Transaksi Peminjaman')
 
 @section('content')
-    @if(session('success'))
-        <div class="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 rounded-lg shadow-sm text-sm">
-            {{ session('success') }}
-        </div>
-    @endif
+@if(session('success'))
+    <div class="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 rounded-lg shadow-sm text-sm">
+        {{ session('success') }}
+    </div>
+@endif
 
-    @if(session('error'))
-        <div class="mb-4 bg-red-50 border border-red-200 text-red-800 p-4 rounded-lg shadow-sm text-sm">
-            {{ session('error') }}
-        </div>
-    @endif
+@if(session('error'))
+    <div class="mb-4 bg-red-50 border border-red-200 text-red-800 p-4 rounded-lg shadow-sm text-sm">
+        {{ session('error') }}
+    </div>
+@endif
 
     <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
         <div class="p-5 border-b border-gray-200 bg-gray-50 flex flex-col md:flex-row justify-between items-center gap-4">
@@ -119,11 +119,12 @@
                                     <!-- Tombol Hapus -->
                                     <form action="{{ route('admin.peminjaman.destroy', $peminjaman->id) }}"
                                         method="POST"
-                                        onsubmit="return confirm('Yakin ingin menghapus data peminjaman ini?')">
+                                        id="delete-peminjaman-{{ $peminjaman->id }}">
                                         @csrf
                                         @method('DELETE')
 
-                                        <button type="submit"
+                                        <button type="button"
+                                            onclick="swalConfirmDelete('peminjaman #{{ $peminjaman->id }}', () => document.getElementById('delete-peminjaman-{{ $peminjaman->id }}').submit())"
                                             class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs font-semibold transition w-full">
                                             Hapus
                                         </button>
@@ -173,7 +174,7 @@
         function statusGanti(sel) {
             var form = sel.closest('form');
             if (sel.value === 'dikembalikan') { openKembali(form.dataset.id, form.dataset.plan); sel.value = form.dataset.current; return; }
-            if (confirm('Ubah status ke ' + sel.value + '?')) { form.submit(); } else { sel.value = form.dataset.current; }
+            swalConfirmAction('Ubah Status', 'Yakin ubah status ke ' + sel.options[sel.selectedIndex].text + '?', () => form.submit());
         }
         function openKembali(id, plan) {
             document.getElementById('kembaliForm').action = kembaliBase + '/' + id + '/status';

@@ -52,13 +52,11 @@
             @error('foto') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
         </div>
 
-        <div class="flex justify-between items-center">
+        <div class="flex justify-end space-x-2">
             <a href="{{ route('admin.user.index') }}"
-               class="text-gray-600 hover:text-gray-800 text-sm font-semibold">Batal</a>
+               class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg text-sm font-semibold transition">Batal</a>
             <button type="submit"
-                    class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
-                Simpan
-            </button>
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">Simpan</button>
         </div>
     </form>
 </div>

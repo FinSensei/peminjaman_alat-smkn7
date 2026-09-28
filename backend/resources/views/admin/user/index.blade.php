@@ -4,12 +4,10 @@
 @section('header-title', 'Manajemen Pengguna Sistem')
 
 @section('content')
-    <!-- Notifikasi Sukses/Gagal -->
+    {{-- Notifikasi Sukses/Gagal --}}
     @if(session('success'))
         <div class="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 rounded-lg shadow-sm">
-            @if (session('success'))
-                {{ session('success') }}
-            @endif
+            {{ session('success') }}
         </div>
     @endif
 
@@ -85,10 +83,11 @@
                                     </a>
 
                                     <!-- Tombol Hapus -->
-                                    <form action="{{ route('admin.user.destroy', $user->id) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus user ini?')">
+                                    <form action="{{ route('admin.user.destroy', $user->id) }}" method="POST" id="delete-user-{{ $user->id }}">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit"
+                                        <button type="button"
+                                                onclick="swalConfirmDelete('user {{ $user->name }}', () => document.getElementById('delete-user-{{ $user->id }}').submit())"
                                                 class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded text-xs font-semibold transition">
                                             Hapus
                                         </button>

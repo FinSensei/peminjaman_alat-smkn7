@@ -88,7 +88,7 @@ class AdminController extends Controller
             'gambar' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
-        $data = $request->validated();
+        $data = $request->only(['nama_alat', 'kategori_id', 'stok', 'status_kondisi', 'deskripsi']);
 
         // Handle Upload Gambar jika ada (pakai Storage disk public agar aman)
         if ($request->hasFile('gambar')) {
@@ -123,7 +123,7 @@ class AdminController extends Controller
             'gambar' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
-        $data = $request->validated();
+        $data = $request->only(['nama_alat', 'kategori_id', 'stok', 'status_kondisi', 'deskripsi']);
 
         // Handle Update Gambar jika ada file baru (Storage)
         if ($request->hasFile('gambar')) {
@@ -553,7 +553,7 @@ class AdminController extends Controller
         $dendaAuto = $hariTelat * config('inventory.denda_per_hari', 5000);
         $pengembalian->update([
             'kondisi_kembali' => $kondisi,
-            'denda' => $request->filled('denda') ? (int)$request->denda : $dendaAuto,
+            'denda' => ($request->denda !== null && (int)$request->denda > 0) ? (int)$request->denda : $dendaAuto,
         ]);
 
         return redirect()
@@ -582,6 +582,8 @@ class AdminController extends Controller
                 'pengembalian'
             ])->findOrFail($id);
 
+            // Referensi rencana kembali untuk admin
+            $rencanaKembali = $peminjaman->tgl_kembali_plan ? $peminjaman->tgl_kembali_plan->format('d-m-Y') : 'tidak ada';
             // Pastikan status masih dipinjam
             if ($peminjaman->status !== 'dipinjam') {
                 throw new \Exception(
@@ -606,7 +608,7 @@ class AdminController extends Controller
                 'peminjaman_id' => $peminjaman->id,
                 'tgl_kembali' => $request->tgl_kembali,
                 'kondisi_kembali' => $request->kondisi_kembali,
-                'denda' => $request->filled('denda') ? (int)$request->denda : $dendaAuto,
+                'denda' => ($request->denda !== null && (int)$request->denda > 0) ? (int)$request->denda : $dendaAuto,
                 'petugas_id' => auth()->id(),
             ]);
 

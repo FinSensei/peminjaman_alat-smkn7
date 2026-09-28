@@ -44,7 +44,7 @@
                         <span class="text-xs text-gray-500 ml-2">{{ $pinjam->tgl_pinjam }} &rarr; {{ $pinjam->tgl_kembali_plan }}</span>
                     </div>
                     @php
-                        $badge = ['diajukan'=>'bg-yellow-100 text-yellow-800','dipinjam'=>'bg-blue-100 text-blue-800','telat'=>'bg-red-100 text-red-800','dikembalikan'=>'bg-emerald-100 text-emerald-800'][$pinjam->status] ?? 'bg-gray-100 text-gray-800';
+                        $badge = ['diajukan'=>'bg-yellow-100 text-yellow-800','dipinjam'=>'bg-blue-100 text-blue-800','req_kembali'=>'bg-indigo-100 text-indigo-700','telat'=>'bg-red-100 text-red-800','dikembalikan'=>'bg-emerald-100 text-emerald-800'][$pinjam->status] ?? 'bg-gray-100 text-gray-800';
                     @endphp
                     <span class="px-2.5 py-1 text-xs font-semibold rounded-full {{ $badge }}">{{ ucfirst($pinjam->status) }}</span>
                 </div>
@@ -92,12 +92,19 @@
 
                 @if($pinjam->status === 'diajukan')
                 <div class="flex gap-2">
-                        <form action="{{ route('peminjam.peminjaman.batal', $pinjam->id) }}" method="POST" onsubmit="return confirm('Batalkan pengajuan ini?')">
+                        <a href="{{ route('peminjam.peminjaman.edit', $pinjam->id) }}" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-1.5 rounded-lg text-xs font-medium">Edit</a>
+                        <form action="{{ route('peminjam.peminjaman.batal', $pinjam->id) }}" method="POST" onsubmit="confirmAction('Batalkan pengajuan ini?', this)">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-4 py-1.5 rounded-lg text-xs font-medium">Batalkan</button>
                         </form>
                 </div>
+                @endif
+                @if(in_array($pinjam->status, ['dipinjam', 'telat']))
+                <form action="{{ route('peminjam.pengembalian.req', $pinjam->id) }}" method="POST" onsubmit="confirmAction('Ajukan req pengembalian?', this)">
+                    @csrf
+                    <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded-lg text-xs font-medium">Req Kembalikan</button>
+                </form>
                 @endif
             </div>
         @empty
@@ -112,4 +119,25 @@
         {{ $peminjaman->links() }}
     </div>
 </div>
+
+@push('scripts')
+    <script>
+        function confirmAction(message, form) {
+            event.preventDefault();
+            Swal.fire({
+                title: 'Konfirmasi',
+                text: message,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Ya, Lanjutkan',
+                cancelButtonText: 'Batal',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) form.submit();
+            });
+        }
+    </script>
+@endpush
 @endsection

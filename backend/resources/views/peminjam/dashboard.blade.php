@@ -4,8 +4,8 @@
 @section('header-title', 'Dashboard')
 
 @section('content')
-<div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-    <a href="{{ route('peminjam.riwayat') }}" class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-blue-500 hover:shadow-md data-aos="zoom-in" data-aos-delay="0">
+<div class="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
+    <a href="{{ route('peminjam.riwayat') }}" class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-blue-500 hover:shadow-md" data-aos="zoom-in" data-aos-delay="0">
         <div class="text-xs text-gray-500">Total Pinjam</div>
         <div class="text-2xl font-bold text-gray-800">{{ $stats['total'] }}</div>
         <div class="text-xs text-blue-600">Lihat riwayat &rarr;</div>
@@ -19,6 +19,11 @@
         <div class="text-xs text-gray-500">Dipinjam</div>
         <div class="text-2xl font-bold text-blue-600">{{ $stats['dipinjam'] }}</div>
         <div class="text-xs text-blue-600">Sedang dipinjam</div>
+    </a>
+    <a href="{{ route('peminjam.riwayat', ['status'=>'req_kembali']) }}" class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-indigo-500 hover:shadow-md" data-aos="zoom-in" data-aos-delay="125">
+        <div class="text-xs text-gray-500">Req Kembali</div>
+        <div class="text-2xl font-bold text-indigo-600">{{ $stats['req_kembali'] }}</div>
+        <div class="text-xs text-indigo-600">Menunggu petugas</div>
     </a>
     <a href="{{ route('peminjam.riwayat', ['status'=>'telat']) }}" class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-red-500 hover:shadow-md" data-aos="zoom-in" data-aos-delay="150">
         <div class="text-xs text-gray-500">Telat</div>
@@ -52,6 +57,8 @@
                             <span class="px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 text-xs font-bold">Diajukan</span>
                         @elseif($p->status === 'dipinjam')
                             <span class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">Dipinjam</span>
+                        @elseif($p->status === 'req_kembali')
+                            <span class="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold">Dalam Proses Pengembalian</span>
                         @else
                             <span class="px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-bold">Telat</span>
                         @endif
@@ -72,6 +79,15 @@
                 </div>
                 <div class="flex items-center gap-2 flex-shrink-0">
                     <a href="{{ route('peminjam.riwayat') }}" class="text-xs bg-blue-100 hover:bg-blue-200 px-3 py-1.5 rounded-lg">Detail</a>
+                    @if($p->status === 'diajukan')
+                    <a href="{{ route('peminjam.peminjaman.edit', $p->id) }}" class="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium">Edit</a>
+                    @endif
+                    @if(in_array($p->status, ['dipinjam', 'telat']))
+                    <form action="{{ route('peminjam.pengembalian.req', $p->id) }}" method="POST" onsubmit="confirmAction('Ajukan req pengembalian?', this)">
+                        @csrf
+                        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium">Req Kembalikan</button>
+                    </form>
+                    @endif
                 </div>
             </div>
         @empty
@@ -98,4 +114,24 @@
         @endforelse
     </div>
 </div>
+@push('scripts')
+    <script>
+        function confirmAction(message, form) {
+            event.preventDefault();
+            Swal.fire({
+                title: 'Konfirmasi',
+                text: message,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Ya, Lanjutkan',
+                cancelButtonText: 'Batal',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) form.submit();
+            });
+        }
+    </script>
+@endpush
 @endsection

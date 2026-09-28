@@ -4,7 +4,6 @@
 @section('header-title', 'Manajemen Data Alat')
 
 @section('content')
-    <!-- Notifikasi -->
     @if(session('success'))
         <div class="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 rounded-lg shadow-sm text-sm">
             {{ session('success') }}
@@ -79,11 +78,11 @@
                                         class="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded text-xs font-semibold transition">
                                         Edit
                                     </a>
-                                    <form action="{{ route('admin.alat.destroy', $alat->id) }}" method="POST"
-                                        onsubmit="return confirm('Yakin ingin menghapus alat ini?')">
+                                    <form action="{{ route('admin.alat.destroy', $alat->id) }}" method="POST" id="delete-alat-{{ $alat->id }}">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit"
+                                        <button type="button"
+                                            onclick="swalConfirmDelete('alat {{ $alat->nama_alat }}', () => document.getElementById('delete-alat-{{ $alat->id }}').submit())"
                                             class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded text-xs font-semibold transition">
                                             Hapus
                                         </button>

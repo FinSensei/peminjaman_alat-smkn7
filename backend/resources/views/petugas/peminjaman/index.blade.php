@@ -169,8 +169,8 @@
                                         @csrf
 
                                         <button
-                                            type="submit"
-                                            onclick="return confirm('Setujui peminjaman alat ini?')"
+                                            type="button"
+                                            onclick="swalConfirmAction('Setujui Peminjaman', 'Setujui peminjaman alat ini?', () => this.closest('form').submit(), '#10b981', 'Ya, Setujui')"
                                             class="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3 py-1.5 rounded-md"
                                         >
                                             Setujui
@@ -188,8 +188,8 @@
                                         @csrf
 
                                         <button
-                                            type="submit"
-                                            onclick="return confirm('Yakin ingin menolak pengajuan peminjaman ini?')"
+                                            type="button"
+                                            onclick="swalConfirmAction('Tolak Peminjaman', 'Yakin ingin menolak pengajuan peminjaman ini?', () => this.closest('form').submit(), '#ef4444', 'Ya, Tolak')"
                                             class="bg-red-500 hover:bg-red-600 text-white text-xs font-semibold px-3 py-1.5 rounded-md"
                                         >
                                             Tolak

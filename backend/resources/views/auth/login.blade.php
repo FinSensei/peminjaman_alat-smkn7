@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Sistem Peminjaman Alat</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="{{ asset('css/app.css') }}" rel="stylesheet">
+    <script defer src="{{ asset('vendor/alpinejs/alpine.min.js') }}"></script>
     <style>
         @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
         .fade-up { animation: fadeUp .5s ease both; }

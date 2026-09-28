@@ -16,7 +16,6 @@
     <button @click="show = false" class="font-bold text-lg leading-none px-1">&times;</button>
 </div>
 @endif
-
 @if(!empty($reorderMap))
 <div class="bg-blue-50 border border-blue-300 rounded-xl p-4 mb-4 flex justify-between items-center">
     <div class="text-sm text-blue-800"><b>Mode Pinjam Lagi:</b> Alat dari peminjaman sebelumnya sudah dicentang. Sesuaikan jumlah lalu ajukan.</div>

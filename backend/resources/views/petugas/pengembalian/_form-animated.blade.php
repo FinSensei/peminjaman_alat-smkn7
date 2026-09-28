@@ -60,7 +60,7 @@
             <div class="flex-1 h-px bg-gray-200"></div>
         </div>
 
-            <form action="{{ route('petugas.pengembalian.proses', $peminjaman->id) }}?perbaikan=1" method="POST" class="space-y-3 border border-dashed border-amber-200 bg-amber-50/50 rounded-lg p-3" onsubmit="return confirm('Ajukan request perbaikan ke Admin?')">
+            <form action="{{ route('petugas.pengembalian.proses', $peminjaman->id) }}?perbaikan=1" method="POST" id="req-perbaikan-{{ $peminjaman->id }}" class="space-y-3 border border-dashed border-amber-200 bg-amber-50/50 rounded-lg p-3">
             @csrf
             <input type="hidden" name="kondisi_kembali" value="Perlu Diperiksa">
             <input type="hidden" name="denda" value="0">
@@ -68,7 +68,7 @@
             <p class="text-[11px] font-semibold text-amber-800">Data ragu / salah?</p>
             <textarea name="catatan_perbaikan" rows="2" required placeholder="Tulis alasan, contoh: Kondisi salah input, denda perlu koreksi..."
                 class="w-full px-2.5 py-1.5 text-xs border border-amber-200 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"></textarea>
-            <button type="submit" class="w-full bg-white border border-amber-300 hover:bg-amber-100 text-amber-700 text-xs font-bold py-2 rounded-md transition">
+            <button type="button" onclick="swalConfirmAction('Ajukan Perbaikan', 'Ajukan request perbaikan ke Admin?', () => document.getElementById('req-perbaikan-{{ $peminjaman->id }}').submit(), '#f59e0b', 'Ya, Ajukan')" class="w-full bg-white border border-amber-300 hover:bg-amber-100 text-amber-700 text-xs font-bold py-2 rounded-md transition">
                 Ajukan Perbaikan ke Admin
             </button>
         </form>

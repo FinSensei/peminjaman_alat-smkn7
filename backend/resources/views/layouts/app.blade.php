@@ -4,12 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Dashboard Admin')</title>
-        <script src="https://cdn.tailwindcss.com"></script>
-<script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
-<style>
+        <link href="{{ asset('css/app.css') }}" rel="stylesheet">
+<script defer src="{{ asset('vendor/alpinejs/alpine.min.js') }}"></script>
+<link href="{{ asset('vendor/aos/aos.css') }}" rel="stylesheet">
+    <script src="{{ asset('vendor/sweetalert2/sweetalert2.min.js') }}"></script>
+    <link href="{{ asset('vendor/sweetalert2/sweetalert2.min.css') }}" rel="stylesheet">
+    <script>
+        // Fallback SweetAlert2 ke native confirm() jika offline/CDN error
+        window.Swal = window.Swal || {
+            fire: function(options) {
+                const msg = (options.text || '') + (options.title ? '\n' + options.title : '');
+                const confirmed = window.confirm(msg);
+                return Promise.resolve({ isConfirmed: confirmed, isDismissed: !confirmed });
+            }
+        };
+    </script>
+    <style>
 .card-lift { transition: transform .25s ease, box-shadow .25s ease; }
 .card-lift:hover { transform: translateY(-4px); box-shadow: 0 12px 24px -8px rgba(0,0,0,.25); }
+[x-cloak] { display: none !important; }
 </style>
     <style>
         table thead tr { background-color: #1f2937 !important; }
@@ -124,9 +137,9 @@
         </div>
         @endif
         <div class="p-4 pt-0">
-            <form action="{{ route('logout') }}" method="POST" onsubmit="return confirm('Anda yakin ingin logout?')">
+            <form action="{{ route('logout') }}" method="POST" id="logout-form">
                 @csrf
-                <button type="submit" class="w-full bg-red-500/10 hover:bg-red-500 hover:text-white text-red-400 text-sm font-semibold px-4 py-2 rounded-lg transition flex items-center justify-center gap-2">
+                <button type="button" onclick="swalConfirmAction('Logout', 'Anda yakin ingin keluar?', () => document.getElementById('logout-form').submit(), '#ef4444', 'Ya, Keluar')" class="w-full bg-red-500/10 hover:bg-red-500 hover:text-white text-red-400 text-sm font-semibold px-4 py-2 rounded-lg transition flex items-center justify-center gap-2">
                     <span>🚪</span> Keluar
                 </button>
             </form>
@@ -153,7 +166,7 @@
                         <span class="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5">{{ $notifBelum }}</span>
                         @endif
                     </button>
-                    <div x-show="open" @click.outside="open = false" x-transition class="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden z-50">
+                    <div x-show="open" x-cloak @click.outside="open = false" x-transition class="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden z-50">
                         <div class="px-4 py-2 border-b font-bold text-sm text-gray-800 flex justify-between items-center">
                             <span>Notifikasi</span>
                             <form action="{{ route('notifikasi.bacaSemua') }}" method="POST">@csrf<button class="text-xs text-blue-600 font-semibold">Tandai dibaca</button></form>
@@ -179,8 +192,12 @@
     </div>
 </div>
 @stack('scripts')
-<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-<script>AOS.init({ duration: 500, once: true });</script>
+<script src="{{ asset('vendor/aos/aos.js') }}"></script>
+<script>
+window.addEventListener('load', function() {
+    AOS.init({ duration: 500, once: true });
+});
+</script>
 <script>let aosT;document.getElementById("konten-scroll").addEventListener("scroll",()=>{clearTimeout(aosT);aosT=setTimeout(()=>window.dispatchEvent(new Event("scroll")),80);},{passive:true});</script>
 <script>
 function formKembali(plan, tarif) {
@@ -198,7 +215,42 @@ function formKembali(plan, tarif) {
         }
     };
 }
-</script>
 
+// SweetAlert2 Helper Functions
+function swalConfirm(options) {
+    const defaults = {
+        title: 'Konfirmasi',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#10b981',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Ya, Lanjutkan',
+        cancelButtonText: 'Batal',
+        reverseButtons: true,
+        allowOutsideClick: false,
+        allowEscapeKey: true,
+    };
+    return Swal.fire({ ...defaults, ...options });
+}
+
+function swalConfirmDelete(itemName, callback) {
+    return swalConfirm({
+        title: 'Hapus Data',
+        text: `Yakin ingin menghapus ${itemName}? Tindakan ini tidak bisa dibatalkan.`,
+        icon: 'warning',
+        confirmButtonColor: '#ef4444',
+        confirmButtonText: 'Ya, Hapus',
+    }).then((result) => { if (result.isConfirmed) callback(); });
+}
+
+function swalConfirmAction(title, text, callback, confirmColor = '#10b981', confirmText = 'Ya, Lanjutkan') {
+    return swalConfirm({
+        title,
+        text,
+        confirmButtonColor: confirmColor,
+        confirmButtonText: confirmText,
+    }).then((result) => { if (result.isConfirmed) callback(); });
+}
+</script>
 </body>
 </html>

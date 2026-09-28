@@ -288,8 +288,8 @@
 
 
                     <button
-                        type="submit"
-                        onclick="return confirm('Apakah alat sudah diperiksa dan ingin memproses pengembalian ini?')"
+                        type="button"
+                        onclick="swalConfirmAction('Proses Pengembalian', 'Apakah alat sudah diperiksa dan ingin memproses pengembalian ini?', () => this.closest('form').submit(), '#10b981', 'Ya, Proses')"
                         class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold"
                     >
                         Proses Pengembalian

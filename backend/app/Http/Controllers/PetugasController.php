@@ -19,6 +19,7 @@ class PetugasController extends Controller
         $stats = [
             'menunggu'       => Peminjaman::where('status', 'diajukan')->count(),
             'dipinjam'       => Peminjaman::where('status', 'dipinjam')->count(),
+            'req_kembali'    => Peminjaman::where('status', 'req_kembali')->count(),
             'telat'          => Peminjaman::where('status', 'telat')->count(),
             'kembaliHariIni' => Pengembalian::whereDate('tgl_kembali', now()->toDateString())->count(),
         ];
@@ -28,6 +29,7 @@ class PetugasController extends Controller
             ->where(function ($q) use ($batas) {
                 $q->where('status', 'diajukan')
                   ->orWhere('status', 'telat')
+                  ->orWhere('status', 'req_kembali')
                   ->orWhere(function ($q2) use ($batas) {
                       $q2->where('status', 'dipinjam')
                          ->whereDate('tgl_kembali_plan', '<=', $batas);
@@ -159,6 +161,14 @@ class PetugasController extends Controller
         DB::beginTransaction();
         try {
             $peminjaman = Peminjaman::with('detailPinjam')->findOrFail($peminjamanId);
+
+            if (!in_array($peminjaman->status, ['req_kembali', 'dipinjam', 'telat'])) {
+                throw new \Exception("Peminjaman ini tidak bisa diproses pengembalian. Status saat ini: {$peminjaman->status}");
+            }
+
+            if (\App\Models\Pengembalian::where('peminjaman_id', $peminjamanId)->exists()) {
+                throw new \Exception('Pengembalian untuk peminjaman ini sudah dicatat.');
+            }
             // Hitung denda otomatis sesuai selisih hari
             $tglPlan = \Carbon\Carbon::parse($peminjaman->tgl_kembali_plan)->startOfDay();
             $hariIni = \Carbon\Carbon::now()->startOfDay();
@@ -216,6 +226,11 @@ class PetugasController extends Controller
             ->latest()
             ->get();
 
+        $reqPengembalian = Peminjaman::with(['user', 'detailPinjam.alat'])
+            ->where('status', 'req_kembali')
+            ->latest()
+            ->get();
+
         $pengembalians = Pengembalian::with([
             'peminjaman.user',
             'peminjaman.detailPinjam.alat',
@@ -232,7 +247,7 @@ class PetugasController extends Controller
 
         return view(
             'petugas.pengembalian.index',
-            compact('pengembalians', 'pendingPeminjamans', 'search')
+            compact('pengembalians', 'pendingPeminjamans', 'search', 'reqPengembalian')
         );
     }
 

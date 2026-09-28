@@ -50,11 +50,13 @@ class PeminjamController extends Controller
             ->whereDate('tgl_kembali_plan', '<', now()->toDateString())
             ->update(['status' => 'telat']);
 
-        $stats = [
+$stats = [
             'total' => Peminjaman::where('user_id', $uid)->count(),
             'diajukan' => Peminjaman::where('user_id', $uid)->where('status','diajukan')->count(),
             'dipinjam' => Peminjaman::where('user_id', $uid)->where('status','dipinjam')->count(),
+            'req_kembali' => Peminjaman::where('user_id', $uid)->where('status','req_kembali')->count(),
             'telat' => Peminjaman::where('user_id', $uid)->where('status','telat')->count(),
+            'dikembalikan' => Peminjaman::where('user_id', $uid)->where('status','dikembalikan')->count(),
         ];
         return view('peminjam.katalog', compact('alats', 'search', 'kategoris', 'kategori_id', 'stats', 'reorderMap'));
     }
@@ -166,6 +168,7 @@ class PeminjamController extends Controller
             'total' => Peminjaman::where('user_id', $uid)->count(),
             'diajukan' => Peminjaman::where('user_id', $uid)->where('status','diajukan')->count(),
             'dipinjam' => Peminjaman::where('user_id', $uid)->where('status','dipinjam')->count(),
+            'req_kembali' => Peminjaman::where('user_id', $uid)->where('status','req_kembali')->count(),
             'telat' => Peminjaman::where('user_id', $uid)->where('status','telat')->count(),
             'dikembalikan' => Peminjaman::where('user_id', $uid)->where('status','dikembalikan')->count(),
         ];
@@ -173,7 +176,7 @@ class PeminjamController extends Controller
         $today = now()->startOfDay();
         $aktif = Peminjaman::with(['detailPinjam.alat', 'pengembalian'])
             ->where('user_id', $uid)
-            ->whereIn('status', ['diajukan', 'dipinjam', 'telat'])
+            ->whereIn('status', ['diajukan', 'dipinjam', 'telat', 'req_kembali'])
             ->latest()
             ->take(5)
             ->get()
@@ -191,5 +194,140 @@ class PeminjamController extends Controller
         $totalDenda = $aktif->sum('estimasi_denda');
         $notifs = \App\Models\Notifikasi::where('user_id', $uid)->latest()->take(5)->get();
         return view('peminjam.dashboard', compact('stats', 'aktif', 'notifs', 'dendaPerHari', 'totalDenda'));
+    }
+
+    public function editPeminjaman($id)
+    {
+        $peminjaman = \App\Models\Peminjaman::with('detailPinjam.alat')->findOrFail($id);
+        if ($peminjaman->user_id !== auth()->id()) {
+            abort(403, 'Akses ditolak.');
+        }
+        if ($peminjaman->status !== 'diajukan') {
+            return redirect()->route('peminjam.riwayat')->with('error', 'Hanya pengajuan dengan status diajukan yang bisa diedit.');
+        }
+
+        $kategoris = \App\Models\Kategori::all();
+        $alatTerpilih = $peminjaman->detailPinjam->pluck('alat_id')->toArray();
+        $jumlahTerpilih = $peminjaman->detailPinjam->pluck('jumlah', 'alat_id')->toArray();
+
+        $search = request()->input('search');
+        $kategori_id = request()->input('kategori_id');
+        $alats = \App\Models\Alat::with('kategori')
+            ->tersedia()
+            ->when($search, function ($q) use ($search) {
+                $q->where(function ($qq) use ($search) {
+                    $qq->where('nama_alat', 'like', "%{$search}%")
+                       ->orWhereHas('kategori', function ($k) use ($search) {
+                           $k->where('nama_kategori', 'like', "%{$search}%");
+                       });
+                });
+            })
+            ->when($kategori_id, function ($q) use ($kategori_id) {
+                $q->where('kategori_id', $kategori_id);
+            })
+            ->latest()
+            ->paginate(12)
+            ->withQueryString();
+
+        return view('peminjam.peminjaman.edit', compact('peminjaman', 'kategoris', 'alatTerpilih', 'jumlahTerpilih', 'alats', 'search', 'kategori_id'));
+    }
+
+    public function updatePeminjaman(\Illuminate\Http\Request $request, $id)
+    {
+        $peminjaman = \App\Models\Peminjaman::with('detailPinjam')->findOrFail($id);
+        if ($peminjaman->user_id !== auth()->id()) {
+            abort(403, 'Akses ditolak.');
+        }
+        if ($peminjaman->status !== 'diajukan') {
+            return redirect()->route('peminjam.riwayat')->with('error', 'Hanya pengajuan dengan status diajukan yang bisa diedit.');
+        }
+
+        $request->validate([
+            'tgl_kembali_plan' => 'required|date|date_format:Y-m-d|after_or_equal:today',
+            'alat_id' => 'required|array|min:1',
+            'alat_id.*' => 'exists:alat,id',
+            'jumlah' => 'required|array',
+            'jumlah.*' => 'required|integer|min:1',
+        ]);
+
+        try {
+            \Illuminate\Support\Facades\DB::transaction(function () use ($request, $peminjaman) {
+                $peminjaman->update([
+                    'tgl_kembali_plan' => $request->tgl_kembali_plan,
+                ]);
+
+                $alatLama = $peminjaman->detailPinjam->pluck('jumlah', 'alat_id')->toArray();
+                $peminjaman->detailPinjam()->delete();
+
+                foreach ($request->alat_id as $index => $alatId) {
+                    $jumlahBaru = $request->jumlah[$index];
+                    $alat = \App\Models\Alat::lockForUpdate()->findOrFail($alatId);
+
+                    $stokTersedia = $alat->stok + ($alatLama[$alatId] ?? 0);
+                    if ($stokTersedia < $jumlahBaru) {
+                        throw new \Exception("Stok alat '{$alat->nama_alat}' tidak mencukupi. Tersedia: {$stokTersedia}");
+                    }
+
+                    \App\Models\DetailPinjam::create([
+                        'peminjaman_id' => $peminjaman->id,
+                        'alat_id' => $alatId,
+                        'jumlah' => $jumlahBaru,
+                    ]);
+                }
+            });
+
+            // Notifikasi ke petugas/admin
+            $stafIds = \App\Models\User::whereIn('role', ['admin', 'petugas'])->pluck('id');
+            foreach ($stafIds as $sid) {
+                \App\Models\Notifikasi::create([
+                    'user_id' => $sid,
+                    'judul' => 'Pengajuan Diperbarui #' . $peminjaman->id,
+                    'pesan' => auth()->user()->name . ' mengubah detail peminjaman.',
+                    'link' => route('petugas.peminjaman.index'),
+                ]);
+            }
+
+            // Log aktivitas
+            if (method_exists(auth()->user(), 'logAktivitas')) {
+                auth()->user()->logAktivitas()->create([
+                    'aktivitas' => "Mengubah peminjaman #{$peminjaman->id}: tanggal kembali & item alat",
+                ]);
+            }
+
+            return redirect()->route('peminjam.riwayat')->with('success', 'Pengajuan peminjaman berhasil diperbarui.');
+        } catch (\Exception $e) {
+            return redirect()->back()->withInput()->with('error', 'Gagal memperbarui: ' . $e->getMessage());
+        }
+    }
+
+    public function reqPengembalian($id)
+    {
+        $pinjam = \App\Models\Peminjaman::findOrFail($id);
+        if ($pinjam->user_id !== auth()->id()) {
+            return back()->with('error', 'Akses ditolak.');
+        }
+        if (!in_array($pinjam->status, ['dipinjam', 'telat'])) {
+            return back()->with('error', 'Hanya pengajuan dengan status dipinjam atau telat yang bisa diajukan pengembalian.');
+        }
+        if ($pinjam->status === 'req_kembali') {
+            return back()->with('error', 'Request pengembalian sudah dikirim, tunggu petugas memproses.');
+        }
+        if (\App\Models\Pengembalian::where('peminjaman_id', $id)->exists()) {
+            return back()->with('error', 'Pengembalian sudah diproses.');
+        }
+
+        $pinjam->update(['status' => 'req_kembali']);
+
+        $stafIds = \App\Models\User::whereIn('role', ['admin', 'petugas'])->pluck('id');
+        foreach ($stafIds as $sid) {
+            \App\Models\Notifikasi::create([
+                'user_id' => $sid,
+                'judul' => 'Request Pengembalian #' . $pinjam->id,
+                'pesan' => auth()->user()->name . ' mengajukan pengembalian alat.',
+                'link' => route('petugas.pengembalian.index'),
+            ]);
+        }
+
+        return back()->with('success', 'Req pengembalian diajukan, tunggu proses petugas.');
     }
 }

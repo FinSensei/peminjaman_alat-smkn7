@@ -104,7 +104,13 @@ Route::middleware(['auth', 'role:peminjam'])->prefix('peminjam')->name('peminjam
     Route::get('/katalog', [PeminjamController::class, 'katalogAlat'])->name('katalog');
     Route::post('/peminjaman/ajukan', [PeminjamController::class, 'ajukanPeminjaman'])->name('peminjaman.ajukan');
     Route::get('/riwayat', [PeminjamController::class, 'riwayatPeminjaman'])->name('riwayat');
+    
+    // Edit peminjaman (hanya status diajukan)
+    Route::get('/peminjaman/{id}/edit', [PeminjamController::class, 'editPeminjaman'])->name('peminjaman.edit');
+    Route::put('/peminjaman/{id}', [PeminjamController::class, 'updatePeminjaman'])->name('peminjaman.update');
+    
     Route::delete('/peminjaman/{id}', [PeminjamController::class, 'batalkanPeminjaman'])->name('peminjaman.batal');
+    Route::post('/pengembalian/{id}/req', [PeminjamController::class, 'reqPengembalian'])->name('pengembalian.req');
 });
 
 // ======================= AUTH =======================

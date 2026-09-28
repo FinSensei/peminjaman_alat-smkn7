@@ -4,7 +4,7 @@
 @section('header-title', 'Manajemen Kategori Alat')
 
 @section('content')
-    <!-- Notifikasi -->
+    {{-- Notifikasi --}}
     @if(session('success'))
         <div class="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 rounded-lg shadow-sm text-sm">
             {{ session('success') }}
@@ -65,11 +65,11 @@
                                         class="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded text-xs font-semibold transition">
                                         Edit
                                     </a>
-                                    <form action="{{ route('admin.kategori.destroy', $kategori->id) }}" method="POST"
-                                        onsubmit="return confirm('Yakin ingin menghapus kategori ini?')">
+                                    <form action="{{ route('admin.kategori.destroy', $kategori->id) }}" method="POST" id="delete-kategori-{{ $kategori->id }}">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit"
+                                        <button type="button"
+                                            onclick="swalConfirmDelete('kategori {{ $kategori->nama_kategori }}', () => document.getElementById('delete-kategori-{{ $kategori->id }}').submit())"
                                             class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded text-xs font-semibold transition">
                                             Hapus
                                         </button>

@@ -20,15 +20,8 @@
     </div>
 
     <!-- Grafik Statistik -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    <div class="grid grid-cols-1 gap-4 mb-6">
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 max-w-4xl mx-auto w-full">
-            <h3 class="font-bold text-gray-800 mb-2">Peminjaman 6 Bulan Terakhir</h3>
-            <canvas id="chBulan" height="100"
-                data-labels='@json($grafikBulan->pluck('bl'))'
-                data-values='@json($grafikBulan->pluck('jml'))'></canvas>
-        </div>
-    </div>
+    @push('scripts')
+    <script src="{{ asset('vendor/chartjs/chart.umd.min.js') }}"></script>
     <script>
         const chartElement = document.getElementById('chBulan');
         const chartLabels = JSON.parse(chartElement.dataset.labels);
@@ -57,8 +50,15 @@
             }
         });
     </script>
-
-    {{-- TAMBAHAN: ReqEdit menunggu (sisip di atas Log, tidak ubah posisi log lama) --}}
+    @endpush
+    <div class="grid grid-cols-1 gap-4 mb-6">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 max-w-4xl mx-auto w-full">
+            <h3 class="font-bold text-gray-800 mb-2">Peminjaman 6 Bulan Terakhir</h3>
+            <canvas id="chBulan" height="100"
+                data-labels='@json($grafikBulan->pluck('bl'))'
+                data-values='@json($grafikBulan->pluck('jml'))'></canvas>
+        </div>
+</div>
     @if(isset($reqEditCount) && $reqEditCount > 0)
         <div class="mb-6 bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-lg shadow-sm flex items-center justify-between">
             <div>

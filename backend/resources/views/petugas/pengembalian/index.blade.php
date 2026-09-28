@@ -67,15 +67,15 @@
             </form>
         </div>
 
-        {{-- List card horizontal --}}
-        @if(isset($pendingPeminjamans) && $pendingPeminjamans->count() > 0)
-            <div class="p-5">
-                <div
-                    class="flex gap-4 overflow-x-auto pb-3 snap-x snap-mandatory"
-                    style="scrollbar-width: thin;"
-                >
-                    @foreach($pendingPeminjamans as $peminjaman)
-                        <div class="min-w-[300px] max-w-[320px] shrink-0 snap-start border border-gray-200 rounded-xl p-4 bg-gray-50/50 flex flex-col">
+{{-- List card horizontal --}}
+            @if(isset($pendingPeminjamans) && $pendingPeminjamans->count() > 0)
+                <div class="p-5">
+                    <div
+                        class="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory -mx-4 px-4 scroll-smooth scrollbar-thin scrollbar-track-gray-100 scrollbar-thumb-gray-300"
+                        style="scrollbar-width: thin;"
+                    >
+                        @foreach($pendingPeminjamans as $peminjaman)
+                            <div class="min-w-[280px] max-w-[300px] shrink-0 snap-start border border-gray-200 rounded-xl p-4 bg-gray-50/50 flex flex-col">
 
                             {{-- Card header --}}
                             <div class="flex items-start justify-between mb-2">
@@ -87,8 +87,20 @@
                                         {{ $peminjaman->tgl_pinjam?->format('d-m-Y') }} -> {{ $peminjaman->tgl_kembali_plan?->format('d-m-Y') }}<span id="tgl-plan-{{ $peminjaman->id }}" data-plan="{{ $peminjaman->tgl_kembali_plan }}" class="hidden"></span>
                                     </div>
                                 </div>
-                                <span class="ml-2 shrink-0 px-2 py-1 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700">
-                                    dipinjam
+                                @php
+                                    $plan = \Carbon\Carbon::parse($peminjaman->tgl_kembali_plan)->startOfDay();
+                                    $today = \Carbon\Carbon::now()->startOfDay();
+                                    $sisaHari = $today->diffInDays($plan, false);
+                                @endphp
+                                <span class="ml-2 shrink-0 px-2 py-1 rounded-full text-[10px] font-bold 
+                                    @if($sisaHari < 0) bg-red-100 text-red-700
+                                    @elseif($sisaHari == 0) bg-yellow-100 text-yellow-700
+                                    @elseif($sisaHari <= 3) bg-yellow-100 text-yellow-700
+                                    @else bg-blue-100 text-blue-700 @endif">
+                                    @if($sisaHari < 0) Telat {{ abs($sisaHari) }} hari
+                                    @elseif($sisaHari == 0) Jatuh Tempo Hari Ini
+                                    @elseif($sisaHari <= 3) Tenggat {{ $sisaHari }} Hari
+                                    @else Dipinjam @endif
                                 </span>
                             </div>
 
@@ -125,9 +137,63 @@
                 </p>
             </div>
         @else
-            <div class="p-8 text-center text-sm text-gray-500">
-                Tidak ada peminjaman yang perlu diproses.
+            <div class="p-8 text-center">
+                <div class="text-4xl mb-2">📭</div>
+                <div class="text-gray-500 text-sm mb-3">Tidak ada peminjaman yang perlu diproses.</div>
+                <a href="{{ route('petugas.peminjaman.index') }}" class="text-xs text-blue-600 hover:underline">Lihat daftar peminjaman &rarr;</a>
             </div>
+        @endif
+    </div>
+
+    {{-- ============================================ --}}
+    {{--  PERMINTAAN PENGEMBALIAN ALAT              --}}
+    {{-- ============================================ --}}
+    <div class="bg-white rounded-xl shadow-sm border border-indigo-200 mb-6">
+        <div class="p-5 border-b border-indigo-100 bg-indigo-50/50">
+            <h2 class="text-lg font-bold text-indigo-700">Permintaan Pengembalian Alat</h2>
+            <p class="text-sm text-indigo-600 mt-1">Peminjam sudah mengajukan pengembalian, menunggu proses petugas.</p>
+        </div>
+@if(isset($reqPengembalian) && $reqPengembalian->count() > 0)
+            <div class="p-5">
+                <div class="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory -mx-4 px-4 scroll-smooth scrollbar-thin scrollbar-track-gray-100 scrollbar-thumb-gray-300">
+                    @foreach($reqPengembalian as $peminjaman)
+                    <div class="min-w-[280px] max-w-[300px] shrink-0 snap-start border border-indigo-200 rounded-xl p-4 bg-indigo-50/30 flex flex-col">
+                    <div class="flex items-start justify-between mb-2">
+                        <div class="min-w-0">
+                            <div class="font-bold text-sm text-gray-800 truncate">{{ $peminjaman->user->name ?? '-' }}</div>
+                            <div class="text-xs text-gray-500">{{ $peminjaman->tgl_pinjam?->format('d-m-Y') }} → {{ $peminjaman->tgl_kembali_plan?->format('d-m-Y') }}<span id="tgl-plan-{{ $peminjaman->id }}" data-plan="{{ $peminjaman->tgl_kembali_plan }}" class="hidden"></span></div>
+                        </div>
+                        @php
+                            $plan = \Carbon\Carbon::parse($peminjaman->tgl_kembali_plan)->startOfDay();
+                            $today = \Carbon\Carbon::now()->startOfDay();
+                            $sisaHari = $today->diffInDays($plan, false);
+                        @endphp
+                        <span class="ml-2 shrink-0 px-2 py-1 rounded-full text-[10px] font-bold 
+                            @if($sisaHari < 0) bg-red-100 text-red-700
+                            @else bg-indigo-100 text-indigo-700 @endif">
+                            @if($sisaHari < 0) Telat {{ abs($sisaHari) }} hari @else Req Kembali @endif
+                        </span>
+                    </div>
+                    <div class="mb-3 flex-1">
+                        <div class="text-[11px] font-semibold text-gray-600 mb-1">Alat:</div>
+                        @foreach($peminjaman->detailPinjam as $d)
+                        <div class="text-xs text-gray-700 truncate">• {{ $d->alat->nama_alat ?? '-' }} x {{ $d->jumlah }}</div>
+                        @endforeach
+                    </div>
+                    <div class="mt-auto">
+                        <button type="button" data-role="open-single-form" data-id="{{ $peminjaman->id }}" data-name="{{ addslashes($peminjaman->user->name ?? '-') }}" class="w-full py-2 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold transition">Proses</button>
+                    </div>
+                </div>
+                @endforeach
+            </div>
+            <p class="text-[11px] text-indigo-400 mt-2">Geser ke kanan ({{ $reqPengembalian->count() }} permintaan)</p>
+        </div>
+        @else
+        <div class="p-8 text-center">
+            <div class="text-4xl mb-2">📭</div>
+            <div class="text-indigo-500 text-sm mb-3">Belum ada permintaan pengembalian.</div>
+            <a href="{{ route('petugas.pengembalian.index') }}" class="text-xs text-blue-600 hover:underline">Refresh halaman &rarr;</a>
+        </div>
         @endif
     </div>
 
@@ -153,7 +219,7 @@
                         Proses Pengembalian
                     </h3>
                     <p class="text-xs text-gray-500" id="modalSubtitle">
-                        -
+                        {{-- Akan diisi via JS --}}
                     </p>
                 </div>
                 <button
@@ -235,17 +301,23 @@
                         >
                         <p
                             id="modalHint"
-                            class="text-[11px] text-gray-400 mt-1 hidden"
+                            class="text-[11px] text-gray-500 mt-1 hidden"
                         >
-                            Otomatis terisi jika telat, bisa diubah manual.
+                            Denda otomatis: Rp <span id="hintDenda">0</span> 
+                            (<span id="hintHari">0</span> hari × Rp {{ config('inventory.denda_per_hari', 5000) }})
                         </p>
                     </div>
 
                     <button
                         type="submit"
-                        class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg transition"
+                        id="btnSubmit"
+                        class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
-                        Simpan Pengembalian
+                        <span id="btnText">Simpan Pengembalian</span>
+                        <svg id="btnSpinner" class="hidden animate-spin -ml-1 mr-2 h-4 w-4 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
                     </button>
                 </form>
             </div>
@@ -387,7 +459,7 @@
                                     data-role="open-req-edit"
                                     data-id="{{ $pengembalian->id }}"
                                     data-kondisi="{{ addslashes($pengembalian->kondisi_kembali ?? '-') }}"
-                                    class="px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-700 text-xs font-bold rounded-md border border-amber-200 transition"
+                                    class="px-3 py-1.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 text-xs font-bold rounded-md border border-indigo-200 transition"
                                 >
                                     ReqEdit
                                 </button>
@@ -458,7 +530,7 @@
                         rows="3"
                         required
                         placeholder="Tulis alasan, contoh: Denda salah..."
-                        class="w-full px-3 py-2 text-sm border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400"
+                        class="w-full px-3 py-2 text-sm border border-indigo-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
                     ></textarea>
                 </div>
 
@@ -466,7 +538,7 @@
 
                 <button
                     type="submit"
-                    class="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold rounded-lg"
+                    class="w-full py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-bold rounded-lg"
                 >
                     Kirim ReqEdit ke Admin
                 </button>
@@ -486,7 +558,6 @@
                     alert('Isi kondisi kustom terlebih dahulu');
                     return false;
                 }
-                // create hidden input with custom value to override select
                 let hidden = document.getElementById('kustomHidden');
                 if(!hidden){
                     hidden = document.createElement('input');
@@ -496,9 +567,16 @@
                     this.appendChild(hidden);
                 }
                 hidden.value = inp.value.trim();
-                // disable original select so its value not sent duplicated
                 sel.disabled = true;
             }
+
+            // Loading state
+            const btn = document.getElementById('btnSubmit');
+            const btnText = document.getElementById('btnText');
+            const btnSpinner = document.getElementById('btnSpinner');
+            btn.disabled = true;
+            btnText.textContent = 'Menyimpan...';
+            btnSpinner.classList.remove('hidden');
         });
 
         function openSingleForm(id, name){
@@ -507,16 +585,35 @@
             const badge = document.getElementById('modalBadge');
             const denda = document.getElementById('modalDenda');
             const hint  = document.getElementById('modalHint');
+            const hintDenda = document.getElementById('hintDenda');
+            const hintHari = document.getElementById('hintHari');
             document.getElementById('modalTitle').textContent = 'Proses Pengembalian';
             const planVal = document.getElementById('tgl-plan-' + id)?.dataset.plan;
             let ht = 0;
-            if(planVal){ const p=new Date(planVal); const t=new Date(); t.setHours(0,0,0,0); p.setHours(0,0,0,0); ht=Math.max(0, Math.ceil((t-p)/86400000)); }
+            let planDate = '-';
+            if(planVal){ 
+                const p=new Date(planVal); 
+                const t=new Date(); 
+                t.setHours(0,0,0,0); 
+                p.setHours(0,0,0,0); 
+                ht=Math.max(0, Math.ceil((t-p)/86400000));
+                planDate = p.toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'});
+            }
+            
+            // Update modal subtitle with plan date and status
+            let subtitle = 'Rencana: ' + planDate;
+            if(ht > 0) subtitle += ' | <span class="text-red-600 font-medium">Telat ' + ht + ' hari</span>';
+            else if(ht === 0) subtitle += ' | <span class="text-yellow-600 font-medium">Jatuh Tempo Hari Ini</span>';
+            document.getElementById('modalSubtitle').innerHTML = subtitle;
+
             if(ht > 0){
                 document.getElementById('badgeWrap').style.display = '';
                 badge.style.display = '';
                 badge.textContent = 'Telat ' + ht + ' hari';
-                badge.className = 'inline-flex px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700';
+                badge.className = 'inline-flex px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700';
                 denda.value = String(ht * {{ config('inventory.denda_per_hari', 5000) }});
+                hintDenda.textContent = (ht * {{ config('inventory.denda_per_hari', 5000) }}).toLocaleString('id-ID');
+                hintHari.textContent = ht;
                 hint.classList.remove('hidden');
             } else {
                 document.getElementById('badgeWrap').style.display = 'none';
@@ -533,6 +630,7 @@
             document.getElementById('singleFormModal').classList.remove('hidden');
             document.body.style.overflow = 'hidden';
         }
+
         function toggleKustom(val){
             const inp = document.getElementById('modalKustomInput');
             const sel = document.getElementById('modalKondisi');
@@ -558,6 +656,11 @@
             if(inp){ inp.value=''; inp.classList.add('hidden'); inp.required=false; }
             const h = document.getElementById('kustomHidden');
             if(h) h.remove();
+            // reset loading state
+            const btn = document.getElementById('btnSubmit');
+            const btnText = document.getElementById('btnText');
+            const btnSpinner = document.getElementById('btnSpinner');
+            if(btn){ btn.disabled = false; btnText.textContent = 'Simpan Pengembalian'; btnSpinner.classList.add('hidden'); }
         }
 
         function openReqEdit(id, kondisi){
@@ -572,6 +675,23 @@
             document.getElementById('reqEditOverlay').classList.add('hidden');
             document.getElementById('reqEditModal').classList.add('hidden');
             document.body.style.overflow = '';
+        }
+
+        // SweetAlert2 confirm helper
+        function confirmAction(message, callback) {
+            Swal.fire({
+                title: 'Konfirmasi',
+                text: message,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Ya, Lanjutkan',
+                cancelButtonText: 'Batal',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) callback();
+            });
         }
 
         document.addEventListener('click', function (event) {

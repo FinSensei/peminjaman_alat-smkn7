@@ -34,8 +34,8 @@
                     <div class="text-[11px] text-gray-400">Pengembalian {{ $r->tgl_kembali?->format('d-m-Y') }} — {{ $r->updated_at->diffForHumans() }}</div>
                 </div>
                 <div class="flex gap-2 shrink-0">
-                    <form action="{{ route('admin.pengembalian.approve', $r->id) }}" method="POST">@csrf<button class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg">Setujui</button></form>
-                    <form action="{{ route('admin.pengembalian.reject', $r->id) }}" method="POST">@csrf<button class="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-bold rounded-lg">Tolak</button></form>
+                    <form action="{{ route('admin.pengembalian.approve', $r->id) }}" method="POST" id="approve-reqedit-{{ $r->id }}">@csrf<button type="button" onclick="swalConfirmAction('Setujui ReqEdit', 'Setujui perbaikan untuk pengembalian #{{ $r->id }}?', () => document.getElementById('approve-reqedit-{{ $r->id }}').submit(), '#10b981', 'Ya, Setujui')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg">Setujui</button></form>
+                    <form action="{{ route('admin.pengembalian.reject', $r->id) }}" method="POST" id="reject-reqedit-{{ $r->id }}">@csrf<button type="button" onclick="swalConfirmAction('Tolak ReqEdit', 'Tolak perbaikan untuk pengembalian #{{ $r->id }}?', () => document.getElementById('reject-reqedit-{{ $r->id }}').submit(), '#6b7280', 'Ya, Tolak')" class="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-bold rounded-lg">Tolak</button></form>
                     <a href="{{ route('admin.pengembalian.edit', $r->id) }}" class="px-3 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg">Edit</a>
                 </div>
             </div>
@@ -117,6 +117,10 @@
                         Tanggal Pinjam
                     </th>
 
+                    {{-- Rencana Kembali --}}
+                    <th class="py-3 px-4 border-b text-left">
+                        Rencana Kembali
+                    </th>
                     {{-- Tanggal Kembali --}}
                     <th class="py-3 px-4 border-b text-left">
                         Tanggal Kembali
@@ -136,6 +140,7 @@
                     <th class="py-3 px-4 border-b text-left">
                         Petugas
                     </th>
+
 
                     {{-- Aksi --}}
                     <th class="py-3 px-4 border-b text-center">
@@ -212,6 +217,10 @@
                         </td>
 
 
+                        {{-- Rencana Kembali --}}
+                        <td class="py-4 px-4 border-b">
+                            {{ $pengembalian->peminjaman->tgl_kembali_plan ? $pengembalian->peminjaman->tgl_kembali_plan->format('d-m-Y') : '-' }}
+                        </td>
                         {{-- Tanggal Kembali --}}
                         <td class="py-4 px-4 border-b">
 
@@ -320,8 +329,8 @@
                                 Edit
                             </a>
                             @if($pengembalian->butuh_perbaikan)
-                                <form action="{{ route('admin.pengembalian.approve', $pengembalian->id) }}" method="POST" class="inline-block ml-1">@csrf<button class="px-2 py-1 bg-emerald-600 text-white text-[11px] rounded">OK</button></form>
-                                <form action="{{ route('admin.pengembalian.reject', $pengembalian->id) }}" method="POST" class="inline-block ml-1">@csrf<button class="px-2 py-1 bg-gray-200 text-gray-700 text-[11px] rounded">X</button></form>
+                                <form action="{{ route('admin.pengembalian.approve', $pengembalian->id) }}" method="POST" class="inline-block ml-1" id="approve-pengembalian-{{ $pengembalian->id }}">@csrf<button type="button" onclick="swalConfirmAction('Setujui ReqEdit', 'Setujui perbaikan pengembalian #{{ $pengembalian->id }}?', () => document.getElementById('approve-pengembalian-{{ $pengembalian->id }}').submit(), '#10b981', 'Ya, Setujui')" class="px-2 py-1 bg-emerald-600 text-white text-[11px] rounded">OK</button></form>
+                                <form action="{{ route('admin.pengembalian.reject', $pengembalian->id) }}" method="POST" class="inline-block ml-1" id="reject-pengembalian-{{ $pengembalian->id }}">@csrf<button type="button" onclick="swalConfirmAction('Tolak ReqEdit', 'Tolak perbaikan pengembalian #{{ $pengembalian->id }}?', () => document.getElementById('reject-pengembalian-{{ $pengembalian->id }}').submit(), '#6b7280', 'Ya, Tolak')" class="px-2 py-1 bg-gray-200 text-gray-700 text-[11px] rounded">X</button></form>
                             @endif
 
                         </td>
