@@ -260,7 +260,7 @@ class PetugasController extends Controller
         $request->validate([
             'start_date' => 'nullable|date',
             'end_date'   => 'nullable|date|after_or_equal:start_date',
-            'status'     => 'nullable|in:diajukan,dipinjam,dikembalikan,telat',
+            'status'     => 'nullable|in:diajukan,dipinjam,dikembalikan,req_kembali,telat',
         ]);
 
         $startDate = $request->input('start_date');
@@ -282,7 +282,8 @@ class PetugasController extends Controller
             $query->where('status', $status);
         })
         ->latest()
-        ->get();
+        ->paginate(15)
+        ->withQueryString();
 
         return view(
             'petugas.laporan.index',
@@ -300,7 +301,7 @@ class PetugasController extends Controller
         $request->validate([
             'start_date' => 'nullable|date',
             'end_date'   => 'nullable|date|after_or_equal:start_date',
-            'status'     => 'nullable|in:diajukan,dipinjam,dikembalikan,telat',
+            'status'     => 'nullable|in:diajukan,dipinjam,dikembalikan,req_kembali,telat',
         ]);
 
         $startDate = $request->input('start_date');
@@ -344,7 +345,7 @@ class PetugasController extends Controller
         $request->validate([
             'start_date' => 'nullable|date',
             'end_date'   => 'nullable|date|after_or_equal:start_date',
-            'status'     => 'nullable|in:diajukan,dipinjam,dikembalikan,telat',
+            'status'     => 'nullable|in:diajukan,dipinjam,dikembalikan,req_kembali,telat',
         ]);
 
         return Excel::download(
