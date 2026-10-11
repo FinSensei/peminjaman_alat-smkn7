@@ -64,18 +64,31 @@ class AlatController extends Controller
             'data' => new AlatResource($alat->load('kategori')) 
         ]); 
     } 
-    public function destroy(Alat $alat): JsonResponse 
-    { 
-        DB::transaction(function () use ($alat) { 
-            if ($alat->gambar) { 
-                Storage::disk('public')->delete($alat->gambar); 
-            } 
-            $alat->delete(); 
-        }); 
-        return response()->json([ 
-            'message' => 'Alat berhasil dihapus.' 
-        ]); 
-    } 
+public function destroy(Alat $alat): JsonResponse
+    {
+        // Cek apakah alat sedang dipinjam aktif
+        $aktifPinjam = \App\Models\DetailPinjam::where('alat_id', $alat->id)
+            ->whereHas('peminjaman', function ($q) {
+                $q->whereIn('status', ['diajukan', 'dipinjam', 'req_kembali', 'telat']);
+            })
+            ->exists();
+
+        if ($aktifPinjam) {
+            return response()->json([
+                'message' => 'Alat tidak dapat dihapus karena sedang dalam peminjaman aktif.'
+            ], 422);
+        }
+
+        DB::transaction(function () use ($alat) {
+            if ($alat->gambar) {
+                Storage::disk('public')->delete($alat->gambar);
+            }
+            $alat->delete();
+        });
+        return response()->json([
+            'message' => 'Alat berhasil dihapus.'
+        ]);
+    }
     public function katalog(): JsonResponse 
     { 
         $perPage = request()->input('per_page', 15);

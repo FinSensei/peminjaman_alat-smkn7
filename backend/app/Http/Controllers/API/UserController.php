@@ -11,30 +11,34 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;  
 class UserController extends Controller 
 { 
-    public function index(): JsonResponse 
-    { 
-        $users = request()->has('page') || request()->has('per_page') ? User::latest()->paginate(request()->input('per_page',15))->withQueryString() : User::latest()->get(); 
-               return response()->json(['message' => 'Daftar pengguna berhasil diambil.', 
-            'data' => UserResource::collection($users) 
-        ]); 
-    } 
-    public function store(StoreUserRequest $request): JsonResponse 
-    { 
-        $data = $request->validated(); 
-        $user = DB::transaction(function () use ($request, $data) { 
+public function index(): JsonResponse
+    {
+        $users = request()->has('page') || request()->has('per_page')
+            ? User::latest()->paginate(request()->input('per_page', 15))->withQueryString()
+            : User::latest()->get();
+        return response()->json([
+            'message' => 'Daftar pengguna berhasil diambil.',
+            'data' => UserResource::collection($users)
+        ]);
+    }
+public function store(StoreUserRequest $request): JsonResponse
+    {
+        $data = $request->validated();
+        $user = DB::transaction(function () use ($request, $data) {
 
-            $data['password'] = Hash::make($data['password']); 
- 
-            if ($request->hasFile('foto_profile')) { 
-                $data['foto_profile'] = $request->file('foto_profile')->store('profiles', 'public'); 
-            } 
-            return User::create($data); 
-        }); 
-        return response()->json([ 
-            'message' => 'Pengguna berhasil ditambahkan.', 
-            'data' => new UserResource($user) 
-        ], 201); 
-    } 
+            $data['password'] = Hash::make($data['password']);
+            $data['status'] = $data['status'] ?? 'aktif';
+
+            if ($request->hasFile('foto_profile')) {
+                $data['foto_profile'] = $request->file('foto_profile')->store('profiles', 'public');
+            }
+            return User::create($data);
+        });
+        return response()->json([
+            'message' => 'Pengguna berhasil ditambahkan.',
+            'data' => new UserResource($user)
+        ], 201);
+    }
     public function show(User $user): JsonResponse 
     { 
         return response()->json([ 
@@ -62,16 +66,27 @@ class UserController extends Controller
             'data' => new UserResource($user) 
         ]); 
     } 
-    public function destroy(User $user): JsonResponse 
-    { 
-        DB::transaction(function () use ($user) { 
-            if ($user->foto_profile) { 
-                Storage::disk('public')->delete($user->foto_profile); 
-            } 
-            $user->delete(); 
-        }); 
-        return response()->json([ 
-            'message' => 'Pengguna berhasil dihapus.' 
-        ]); 
-    } 
-} 
+public function destroy(User $user): JsonResponse
+    {
+        // Cek apakah user punya peminjaman aktif
+        $aktifPinjam = \App\Models\Peminjaman::where('user_id', $user->id)
+            ->whereIn('status', ['diajukan', 'dipinjam', 'req_kembali', 'telat'])
+            ->exists();
+
+        if ($aktifPinjam) {
+            return response()->json([
+                'message' => 'User tidak dapat dihapus karena masih memiliki peminjaman aktif.'
+            ], 422);
+        }
+
+        DB::transaction(function () use ($user) {
+            if ($user->foto_profile) {
+                Storage::disk('public')->delete($user->foto_profile);
+            }
+            $user->delete(); // Soft delete
+        });
+        return response()->json([
+            'message' => 'Pengguna berhasil dihapus (soft delete).'
+        ]);
+    }
+}

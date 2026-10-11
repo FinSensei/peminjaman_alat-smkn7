@@ -48,6 +48,7 @@
                         <th class="py-3 px-4 border-b">Nama</th>
                         <th class="py-3 px-4 border-b">Email</th>
                         <th class="py-3 px-4 border-b">Role / Hak Akses</th>
+                        <th class="py-3 px-4 border-b">Status</th>
                         <th class="py-3 px-4 border-b">No. HP</th>
                         <th class="py-3 px-4 border-b">Aksi</th>
                     </tr>
@@ -55,7 +56,7 @@
 
                 <tbody class="text-gray-700 text-sm">
                     @forelse($users as $user)
-                        <tr class="hover:bg-gray-50 transition">
+                        <tr class="hover:bg-gray-50 transition {{ $user->status === 'nonaktif' ? 'bg-gray-100' : '' }}">
                             <td class="py-3 px-4 border-b">
                                 @if($user->foto_profile)
                                     <img src="{{ asset('storage/'.$user->foto_profile) }}" alt="Foto" class="w-9 h-9 rounded-full object-cover">
@@ -73,6 +74,13 @@
                                     {{ ucfirst($user->role) }}
                                 </span>
                             </td>
+                            <td class="py-3 px-4 border-b">
+                                @if($user->status === 'aktif')
+                                    <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800">Aktif</span>
+                                @else
+                                    <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Nonaktif</span>
+                                @endif
+                            </td>
                             <td class="py-3 px-4 border-b">{{ $user->no_hp ?? '-' }}</td>
                             <td class="py-3 px-4 border-b">
                                 <div class="flex items-center space-x-2">
@@ -82,7 +90,35 @@
                                         Edit
                                     </a>
 
-                                    <!-- Tombol Hapus -->
+                                    @if($user->status === 'aktif')
+                                    @if($user->id !== auth()->id())
+                                    <!-- Tombol Nonaktifkan -->
+                                    <form action="{{ route('admin.user.nonaktifkan', $user->id) }}" method="POST" id="nonaktifkan-user-{{ $user->id }}">
+                                        @csrf
+                                        <button type="button"
+                                                onclick="swalConfirmAction('Nonaktifkan User', 'Nonaktifkan {{ $user->name }}? User tidak bisa login.', () => document.getElementById('nonaktifkan-user-{{ $user->id }}').submit(), '#f97316', 'Ya, Nonaktifkan')"
+                                                class="text-white px-3 py-1.5 rounded text-xs font-semibold transition"
+                                                style="background-color: #f97316;">
+                                            Nonaktifkan
+                                        </button>
+                                    </form>
+                                    @endif
+                                    @else
+                                    @if($user->id !== auth()->id())
+                                    <!-- Tombol Aktifkan -->
+                                    <form action="{{ route('admin.user.aktifkan', $user->id) }}" method="POST" id="aktifkan-user-{{ $user->id }}">
+                                        @csrf
+                                        <button type="button"
+                                                onclick="swalConfirmAction('Aktifkan User', 'Aktifkan {{ $user->name }}?', () => document.getElementById('aktifkan-user-{{ $user->id }}').submit(), '#10b981', 'Ya, Aktifkan')"
+                                                class="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded text-xs font-semibold transition">
+                                            Aktifkan
+                                        </button>
+                                    </form>
+                                    @endif
+                                    @endif
+
+                                    @if($user->id !== auth()->id())
+                                    <!-- Tombol Hapus (Soft Delete) -->
                                     <form action="{{ route('admin.user.destroy', $user->id) }}" method="POST" id="delete-user-{{ $user->id }}">
                                         @csrf
                                         @method('DELETE')
@@ -92,11 +128,12 @@
                                             Hapus
                                         </button>
                                     </form>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
                     @empty
-                        <td colspan="6" class="py-4 text-center text-gray-500">Belum ada data pengguna.</td>
+                        <td colspan="7" class="py-4 text-center text-gray-500">Belum ada data pengguna.</td>
                     @endforelse
                 </tbody>
             </table>

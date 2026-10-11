@@ -56,10 +56,29 @@ class KategoriController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Kategori $kategori): JsonResponse 
-    { 
-        $kategori->delete(); 
-        return response()->json(['message' => 'Kategori berhasil dihapus.' 
-        ]); 
-    } 
+public function destroy(Kategori $kategori): JsonResponse
+    {
+        // Cek apakah ada alat di kategori ini yang sedang dipinjam aktif
+        $alatAktifPinjam = \App\Models\Alat::where('kategori_id', $kategori->id)
+            ->whereHas('detailPinjam.peminjaman', function ($q) {
+                $q->whereIn('status', ['diajukan', 'dipinjam', 'req_kembali', 'telat']);
+            })
+            ->exists();
+
+        if ($alatAktifPinjam) {
+            return response()->json([
+                'message' => 'Kategori tidak dapat dihapus karena memiliki alat yang sedang dalam peminjaman aktif.'
+            ], 422);
+        }
+
+        if ($kategori->alat()->count() > 0) {
+            return response()->json([
+                'message' => 'Kategori tidak dapat dihapus karena masih digunakan oleh data alat.'
+            ], 422);
+        }
+
+        $kategori->delete();
+        return response()->json(['message' => 'Kategori berhasil dihapus.']);
+    }
+}
 }

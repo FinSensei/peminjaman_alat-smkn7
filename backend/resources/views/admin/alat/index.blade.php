@@ -78,6 +78,14 @@
                                         class="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded text-xs font-semibold transition">
                                         Edit
                                     </a>
+                                    @php
+                                        $aktifPinjam = \App\Models\DetailPinjam::where('alat_id', $alat->id)
+                                            ->whereHas('peminjaman', function ($q) {
+                                                $q->whereIn('status', ['diajukan', 'dipinjam', 'req_kembali', 'telat']);
+                                            })
+                                            ->exists();
+                                    @endphp
+                                    @if(!$aktifPinjam)
                                     <form action="{{ route('admin.alat.destroy', $alat->id) }}" method="POST" id="delete-alat-{{ $alat->id }}">
                                         @csrf
                                         @method('DELETE')
@@ -87,6 +95,9 @@
                                             Hapus
                                         </button>
                                     </form>
+                                    @else
+                                    <span class="text-xs text-red-600 bg-red-50 px-2 py-1 rounded">Sedang dipinjam</span>
+                                    @endif
                                 </div>
                             </td>
                         </tr>

@@ -56,6 +56,13 @@
                 </thead>
                 <tbody class="text-gray-700 text-sm">
                     @forelse($kategoris as $index => $kategori)
+                        @php
+                            $alatAktifPinjam = \App\Models\Alat::where('kategori_id', $kategori->id)
+                                ->whereHas('detailPinjam.peminjaman', function ($q) {
+                                    $q->whereIn('status', ['diajukan', 'dipinjam', 'req_kembali', 'telat']);
+                                })
+                                ->exists();
+                        @endphp
                         <tr class="hover:bg-gray-50 transition">
                             <td class="py-3 px-4 border-b text-center">{{ $kategoris->firstItem() + $index }}</td>
                             <td class="py-3 px-4 border-b font-medium text-gray-900">{{ $kategori->nama_kategori }}</td>
@@ -65,6 +72,7 @@
                                         class="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded text-xs font-semibold transition">
                                         Edit
                                     </a>
+                                    @if(!$alatAktifPinjam && $kategori->alat->count() == 0)
                                     <form action="{{ route('admin.kategori.destroy', $kategori->id) }}" method="POST" id="delete-kategori-{{ $kategori->id }}">
                                         @csrf
                                         @method('DELETE')
@@ -74,6 +82,11 @@
                                             Hapus
                                         </button>
                                     </form>
+                                    @elseif($alatAktifPinjam)
+                                    <span class="text-xs text-red-600 bg-red-50 px-2 py-1 rounded">Alat sedang dipinjam</span>
+                                    @else
+                                    <span class="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">Masih dipakai alat</span>
+                                    @endif
                                 </div>
                             </td>
                         </tr>

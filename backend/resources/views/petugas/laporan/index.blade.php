@@ -200,12 +200,12 @@
 
                 <tbody>
 
-                    @forelse($peminjamans as $index => $peminjaman)
+                    @forelse($peminjamans as $peminjaman)
 
                         <tr>
 
                             <td class="border px-3 py-2">
-                                {{ $index + 1 }}
+                                {{ $peminjamans->firstItem() + $loop->index }}
                             </td>
 
 
@@ -289,9 +289,14 @@
 
                 </tbody>
 
-            </table>
+</table>
 
+        {{-- PAGINATION --}}
+        <div class="mt-4">
+            {{ $peminjamans->links() }}
         </div>
+
+    </div>
 
     </div>
 

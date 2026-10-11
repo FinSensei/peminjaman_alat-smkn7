@@ -144,6 +144,18 @@ class AdminController extends Controller
     {
         $alat = Alat::findOrFail($id);
 
+        // Cek apakah alat sedang dipinjam aktif (diajukan, dipinjam, req_kembali, telat)
+        $aktifPinjam = \App\Models\DetailPinjam::where('alat_id', $alat->id)
+            ->whereHas('peminjaman', function ($q) {
+                $q->whereIn('status', ['diajukan', 'dipinjam', 'req_kembali', 'telat']);
+            })
+            ->exists();
+
+        if ($aktifPinjam) {
+            return redirect()->route('admin.alat.index')
+                ->with('error', 'Alat tidak dapat dihapus karena sedang dalam peminjaman aktif.');
+        }
+
         // Hapus file gambar fisik jika ada (Storage)
         if ($alat->gambar) {
             $rel = str_replace('storage/', '', $alat->gambar);
@@ -213,6 +225,11 @@ class AdminController extends Controller
     {
         $user = User::findOrFail($id);
 
+        // Proteksi: admin tidak bisa ganti role sendiri
+        if ($user->id === auth()->id() && $request->role !== $user->role) {
+            return redirect()->back()->with('error', 'Tidak bisa mengubah role sendiri.');
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $id,
@@ -241,14 +258,60 @@ class AdminController extends Controller
         return redirect()->route('admin.user.index')->with('success', 'Data user berhasil diperbarui.');
     }
 
-    // Menghapus user
+    // Nonaktifkan user (blokir login, data tetap ada)
+    public function nonaktifkanUser($id)
+    {
+        $user = User::findOrFail($id);
+
+        if ($user->id === auth()->id()) {
+            return redirect()->back()->with('error', 'Tidak bisa menonaktifkan akun sendiri.');
+        }
+
+        $user->update(['status' => 'nonaktif']);
+
+        return redirect()->route('admin.user.index')
+            ->with('success', 'User berhasil dinonaktifkan.');
+    }
+
+    // Aktifkan user
+    public function aktifkanUser($id)
+    {
+        $user = User::findOrFail($id);
+        $user->update(['status' => 'aktif']);
+
+        return redirect()->route('admin.user.index')
+            ->with('success', 'User berhasil diaktifkan.');
+    }
+
+    // Menghapus user (Soft Delete - data history tetap tersimpan)
     public function destroyUser($id)
     {
         $user = User::findOrFail($id);
-        if ($user->foto_profile) Storage::disk('public')->delete($user->foto_profile);
-        $user->delete();
 
-        return redirect()->route('admin.user.index')->with('success', 'User berhasil dihapus.');
+        // Proteksi: tidak bisa hapus akun sendiri
+        if ($user->id === auth()->id()) {
+            return redirect()->route('admin.user.index')
+                ->with('error', 'Tidak bisa menghapus akun sendiri.');
+        }
+
+        // Cek apakah user punya peminjaman aktif
+        $aktifPinjam = Peminjaman::where('user_id', $user->id)
+            ->whereIn('status', ['diajukan', 'dipinjam', 'req_kembali', 'telat'])
+            ->exists();
+
+        if ($aktifPinjam) {
+            return redirect()->route('admin.user.index')
+                ->with('error', 'User tidak dapat dihapus karena masih memiliki peminjaman aktif.');
+        }
+
+        if ($user->foto_profile) {
+            Storage::disk('public')->delete($user->foto_profile);
+        }
+
+        $user->delete(); // Soft delete
+
+        return redirect()->route('admin.user.index')
+            ->with('success', 'User berhasil dihapus (data history tetap tersimpan).');
     }
 
     // 1. Menampilkan daftar kategori dengan pencarian + pagination
@@ -314,7 +377,19 @@ class AdminController extends Controller
     {
         $kategori = Kategori::findOrFail($id);
 
-        // Optional: cek apakah kategori masih dipakai oleh alat
+        // Cek apakah ada alat di kategori ini yang sedang dipinjam aktif
+        $alatAktifPinjam = \App\Models\Alat::where('kategori_id', $kategori->id)
+            ->whereHas('detailPinjam.peminjaman', function ($q) {
+                $q->whereIn('status', ['diajukan', 'dipinjam', 'req_kembali', 'telat']);
+            })
+            ->exists();
+
+        if ($alatAktifPinjam) {
+            return redirect()->route('admin.kategori.index')
+                ->with('error', 'Kategori tidak dapat dihapus karena memiliki alat yang sedang dalam peminjaman aktif.');
+        }
+
+        // Optional: cek apakah kategori masih dipakai oleh alat (meski tidak dipinjam)
         if ($kategori->alat()->count() > 0) {
             return redirect()->route('admin.kategori.index')
                 ->with('error', 'Kategori tidak dapat dihapus karena masih digunakan oleh data alat.');
@@ -650,7 +725,7 @@ class AdminController extends Controller
     }
 
     // =============================
-    // REQEDIT PERSETUJUAN (TAMBAHAN, TIDAK UBAH METHOD LAMA)
+    // REQEDIT PERSETUJUAN 
     // =============================
     public function approvePerbaikan($id)
     {

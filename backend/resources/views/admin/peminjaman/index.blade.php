@@ -115,20 +115,6 @@
                                             </select>
                                         </form>
                                     @endif
-
-                                    <!-- Tombol Hapus -->
-                                    <form action="{{ route('admin.peminjaman.destroy', $peminjaman->id) }}"
-                                        method="POST"
-                                        id="delete-peminjaman-{{ $peminjaman->id }}">
-                                        @csrf
-                                        @method('DELETE')
-
-                                        <button type="button"
-                                            onclick="swalConfirmDelete('peminjaman #{{ $peminjaman->id }}', () => document.getElementById('delete-peminjaman-{{ $peminjaman->id }}').submit())"
-                                            class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs font-semibold transition w-full">
-                                            Hapus
-                                        </button>
-                                    </form>
                                 </div>
                             </td>
                         </tr>

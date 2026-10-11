@@ -33,11 +33,16 @@
         <div class="mb-4">
             <label class="block text-gray-700 text-sm font-semibold mb-2">Role / Hak Akses</label>
             <select name="role" required
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500
+                    @if($user->id === auth()->id()) bg-gray-100 text-gray-500 cursor-not-allowed @endif"
+                @if($user->id === auth()->id()) disabled @endif>
                 <option value="peminjam" {{ $user->role == 'peminjam' ? 'selected' : '' }}>Peminjam</option>
                 <option value="petugas" {{ $user->role == 'petugas' ? 'selected' : '' }}>Petugas</option>
                 <option value="admin" {{ $user->role == 'admin' ? 'selected' : '' }}>Admin</option>
             </select>
+            @if($user->id === auth()->id())
+            <p class="text-xs text-gray-500 mt-1">Tidak bisa mengubah role sendiri</p>
+            @endif
         </div>
 
         <div class="mb-6">

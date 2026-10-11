@@ -86,7 +86,7 @@
             <input type="hidden" name="search" value="{{ $search ?? '' }}">
             <input type="hidden" name="kategori_id" value="{{ $kategori_id ?? '' }}">
             <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg text-sm font-medium">Simpan Perubahan <span x-text="terpilih.length">{{ count($jumlahTerpilih) }}</span> Alat</button>
-            <a href="{{ route('peminjam.riwayat') }}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium">Batal</a>
+            <button type="button" onclick="window.location.href='{{ route('peminjam.riwayat') }}'" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium">Batal</button>
             <span class="text-xs text-gray-500">Jumlah bisa 1 alat atau lebih dari 1 per alat</span>
         </div>
     </form>
