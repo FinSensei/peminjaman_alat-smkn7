@@ -222,9 +222,9 @@ backend/
 
 ## ⚙️ **Configuration**
 
-### **Environment Variables (.env)**
+### **Environment Variables (.env) example**
 ```env
-APP_NAME="Sistem Peminjaman Alat Lab"
+APP_NAME="Sistem Peminjaman Alat"
 APP_ENV=production
 APP_DEBUG=false
 APP_URL=http://localhost:8000
@@ -232,9 +232,9 @@ APP_URL=http://localhost:8000
 DB_CONNECTION=mysql
 DB_HOST=mysql-server
 DB_PORT=3306
-DB_DATABASE=API_ujikom
-DB_USERNAME=api_ujikom
-DB_PASSWORD=api_ujikom
+DB_DATABASE=PINJAM_alat
+DB_USERNAME=pinjam_alat
+DB_PASSWORD=pinjam_alat
 
 # Denda per hari (config/inventory.php)
 DENDA_PER_HARI=5000
