@@ -12,7 +12,7 @@
 
 ## 📸 **Screenshots**
 
-> *Tambahkan screenshot aplikasi di folder `docs/screenshots/` dan update path di bawah ini*
+> *Preview dari aplikasi*
 
 | Dashboard Admin | Dashboard Peminjam | Dashboard Petugas |
 |:---:|:---:|:---:|
