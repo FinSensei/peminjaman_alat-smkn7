@@ -234,6 +234,7 @@ class AdminController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $id,
             'role' => 'required|in:admin,petugas,peminjam',
+            'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
         $data = [
@@ -244,7 +245,6 @@ class AdminController extends Controller
         ];
 
         if ($request->hasFile('foto')) {
-            $request->validate(['foto' => 'image|mimes:jpg,jpeg,png|max:2048']);
             if ($user->foto_profile) Storage::disk('public')->delete($user->foto_profile);
             $data['foto_profile'] = $request->file('foto')->store('foto-profil', 'public');
         }

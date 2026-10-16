@@ -81,4 +81,3 @@ public function destroy(Kategori $kategori): JsonResponse
         return response()->json(['message' => 'Kategori berhasil dihapus.']);
     }
 }
-}
