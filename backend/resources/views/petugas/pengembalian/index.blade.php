@@ -210,7 +210,7 @@
         id="singleFormModal"
         class="fixed inset-0 hidden z-50 flex items-center justify-center p-4"
     >
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
 
             {{-- Modal header --}}
             <div class="p-5 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white rounded-t-xl">
@@ -259,31 +259,10 @@
                         </div>
                     </div>
 
-                    {{-- Kondisi --}}
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-700 mb-1">
-                            Kondisi Barang
-                        </label>
-                        <select
-                            name="kondisi_kembali"
-                            id="modalKondisi"
-                            required
-                            onchange="toggleKustom(this.value)"
-                            class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 bg-white"
-                        >
-                            <option value="">-- Pilih Kondisi --</option>
-                            <option value="Baik">Baik</option>
-                            <option value="Rusak Ringan">Rusak Ringan</option>
-                            <option value="Rusak Berat">Rusak Berat</option>
-                            <option value="Hilang">Hilang</option>
-                            <option value="Kustom">Kustom</option>
-                        </select>
-                    <input
-                        type="text"
-                        id="modalKustomInput"
-                        placeholder="Ketik kondisi kustom..."
-                        class="w-full mt-2 px-3 py-2 text-sm border border-emerald-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-400 hidden"
-                    >
+                    {{-- Per-Item Kondisi Split (Baik / Rusak) --}}
+                    <div id="itemKondisiContainer" class="space-y-3">
+                        {{-- Items will be injected by JS --}}
+                        <p class="text-xs text-gray-500 text-center py-4">Memuat data alat...</p>
                     </div>
 
                     {{-- Denda --}}
@@ -549,25 +528,12 @@
     @push('scripts')
     <script>
         document.getElementById('modalForm').addEventListener('submit', function(e){
-            const sel = document.getElementById('modalKondisi');
-            const inp = document.getElementById('modalKustomInput');
-            if(sel.value === 'Kustom'){
-                if(!inp.value.trim()){
-                    e.preventDefault();
-                    inp.focus();
-                    alert('Isi kondisi kustom terlebih dahulu');
-                    return false;
-                }
-                let hidden = document.getElementById('kustomHidden');
-                if(!hidden){
-                    hidden = document.createElement('input');
-                    hidden.type = 'hidden';
-                    hidden.name = 'kondisi_kembali';
-                    hidden.id = 'kustomHidden';
-                    this.appendChild(hidden);
-                }
-                hidden.value = inp.value.trim();
-                sel.disabled = true;
+            // Pastikan detail alat sudah dimuat dan split Baik/Rusak valid
+            const status = getSplitStatus();
+            if (!status.ok) {
+                e.preventDefault();
+                alert(status.message);
+                return false;
             }
 
             // Loading state
@@ -579,8 +545,113 @@
             btnSpinner.classList.remove('hidden');
         });
 
-        function openSingleForm(id, name){
-            document.getElementById('modalForm').action = '/petugas/pengembalian/' + id;
+        // ==========================================================
+        // Helper split kondisi per alat (Baik / Rusak)
+        // ==========================================================
+        function getSplitStatus() {
+            const blocks = document.querySelectorAll('#itemKondisiContainer [data-alat-id]');
+            if (blocks.length === 0) {
+                return { ok: false, message: 'Detail alat belum dimuat. Silakan tutup dan buka kembali form pengembalian.' };
+            }
+
+            for (const block of blocks) {
+                const inputs = block.querySelectorAll('.item-input');
+                if (inputs.length === 0) continue;
+
+                const max = parseInt(inputs[0].dataset.max, 10) || 0;
+                const baik = parseInt(block.querySelector('input[name^="item_baik"]')?.value, 10) || 0;
+                const rusak = parseInt(block.querySelector('input[name^="item_rusak"]')?.value, 10) || 0;
+                const nama = block.querySelector('.item-nama')?.textContent?.trim() || 'alat';
+
+                if (baik + rusak !== max) {
+                    return { ok: false, message: 'Jumlah Baik + Rusak untuk ' + nama + ' harus sama dengan ' + max + '.' };
+                }
+            }
+
+            return { ok: true, message: '' };
+        }
+
+        function validateSplit(input) {
+            const block = input.closest('[data-alat-id]');
+            const errorEl = block ? block.querySelector('.item-error') : null;
+
+            if (errorEl) {
+                const max = parseInt(input.dataset.max, 10) || 0;
+                const pairName = input.dataset.pair;
+                const pairInput = block.querySelector('input[name="' + pairName + '"]');
+                const baikVal = pairName.includes('baik') ? parseInt(input.value, 10) || 0 : parseInt(pairInput?.value, 10) || 0;
+                const rusakVal = pairName.includes('rusak') ? parseInt(input.value, 10) || 0 : parseInt(pairInput?.value, 10) || 0;
+
+                if (baikVal + rusakVal !== max) {
+                    errorEl.classList.remove('hidden');
+                } else {
+                    errorEl.classList.add('hidden');
+                }
+            }
+
+            checkAllValid();
+        }
+
+        function checkAllValid() {
+            const status = getSplitStatus();
+            const submitBtn = document.getElementById('btnSubmit');
+            if (submitBtn) submitBtn.disabled = !status.ok;
+        }
+
+        function renderItemKondisi(items) {
+            const container = document.getElementById('itemKondisiContainer');
+            if (!container) return;
+
+            if (!items || items.length === 0) {
+                container.innerHTML = '<p class="text-xs text-gray-500 text-center py-4">Tidak ada detail alat</p>';
+                checkAllValid();
+                return;
+            }
+
+            let html = '<div class="text-xs font-semibold text-gray-700 mb-2">Kondisi Per Alat (Baik + Rusak = Jumlah Pinjam)</div>';
+            items.forEach(item => {
+                const max = item.jumlah;
+                html += `
+                    <div class="border border-gray-200 rounded-lg p-3 bg-gray-50/50" data-alat-id="${item.alat_id}">
+                        <div class="font-medium text-sm text-gray-800 mb-2 item-nama">${item.nama_alat} <span class="text-gray-500 font-normal">(Pinjam: ${max})</span></div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[11px] font-semibold text-emerald-700 mb-1">Baik</label>
+                                <input type="number" name="item_baik[${item.alat_id}]" value="${max}" min="0" max="${max}"
+                                    class="w-full px-3 py-2 text-sm border border-emerald-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white item-input"
+                                    data-max="${max}" data-pair="item_rusak[${item.alat_id}]"
+                                    oninput="validateSplit(this)">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-red-700 mb-1">Rusak</label>
+                                <input type="number" name="item_rusak[${item.alat_id}]" value="0" min="0" max="${max}"
+                                    class="w-full px-3 py-2 text-sm border border-red-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 bg-white item-input"
+                                    data-max="${max}" data-pair="item_baik[${item.alat_id}]"
+                                    oninput="validateSplit(this)">
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-gray-500 mt-1 hidden item-error">Baik + Rusak harus sama dengan ${max}</p>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+            checkAllValid();
+        }
+
+        function openSingleForm(id, name) {
+            const form = document.getElementById('modalForm');
+            form.action = '/petugas/pengembalian/' + id;
+
+            // Reset tampilan item + tombol submit sebelum memuat data
+            const container = document.getElementById('itemKondisiContainer');
+            if (container) {
+                container.innerHTML = '<p class="text-xs text-gray-500 text-center py-4">Memuat data alat...</p>';
+            }
+            const btnSubmit = document.getElementById('btnSubmit');
+            if (btnSubmit) btnSubmit.disabled = true;
+            const btnText = document.getElementById('btnText');
+            if (btnText) btnText.textContent = 'Simpan Pengembalian';
+
             document.getElementById('modalSubtitle').textContent = name + ' - ID #' + id;
             const badge = document.getElementById('modalBadge');
             const denda = document.getElementById('modalDenda');
@@ -620,47 +691,39 @@
                 denda.value = 0;
                 hint.classList.add('hidden');
             }
-            const selOpen = document.getElementById('modalKondisi');
-            const inpOpen = document.getElementById('modalKustomInput');
-            const hiddenOld = document.getElementById('kustomHidden');
-            if(hiddenOld) hiddenOld.remove();
-            if(selOpen){ selOpen.disabled = false; selOpen.required = true; }
-            if(inpOpen){ inpOpen.classList.add('hidden'); inpOpen.required = false; inpOpen.value = ''; }
+
+            // Fetch detail items for this peminjaman
+            fetch('/petugas/pengembalian/' + id + '/detail', { headers: { 'Accept': 'application/json' } })
+                .then(r => r.json().then(data => ({ ok: r.ok, data: data })))
+                .then(({ ok, data }) => {
+                    if (!ok) {
+                        throw new Error(data && data.message ? data.message : 'Gagal memuat detail alat');
+                    }
+                    renderItemKondisi(data.items);
+                })
+                .catch(err => {
+                    const c = document.getElementById('itemKondisiContainer');
+                    if (c) c.innerHTML = '<p class="text-xs text-red-500 text-center py-4">Gagal memuat detail alat</p>';
+                    console.error('Gagal memuat detail alat:', err);
+                });
+
             document.getElementById('singleFormOverlay').classList.remove('hidden');
             document.getElementById('singleFormModal').classList.remove('hidden');
             document.body.style.overflow = 'hidden';
-        }
-
-        function toggleKustom(val){
-            const inp = document.getElementById('modalKustomInput');
-            const sel = document.getElementById('modalKondisi');
-            if(val === 'Kustom'){
-                inp.classList.remove('hidden');
-                inp.required = true;
-                inp.focus();
-            } else {
-                inp.classList.add('hidden');
-                inp.required = false;
-                inp.value = '';
-            }
         }
 
         function closeSingleForm(){
             document.getElementById('singleFormOverlay').classList.add('hidden');
             document.getElementById('singleFormModal').classList.add('hidden');
             document.body.style.overflow = '';
-            // reset kustom
-            const sel = document.getElementById('modalKondisi');
-            const inp = document.getElementById('modalKustomInput');
-            if(sel){ sel.value = ''; sel.disabled = false; sel.required = true; }
-            if(inp){ inp.value=''; inp.classList.add('hidden'); inp.required=false; }
-            const h = document.getElementById('kustomHidden');
-            if(h) h.remove();
+            // reset item kondisi
+            const container = document.getElementById('itemKondisiContainer');
+            if(container){ container.innerHTML = '<p class="text-xs text-gray-500 text-center py-4">Memuat data alat...</p>'; }
             // reset loading state
             const btn = document.getElementById('btnSubmit');
             const btnText = document.getElementById('btnText');
             const btnSpinner = document.getElementById('btnSpinner');
-            if(btn){ btn.disabled = false; btnText.textContent = 'Simpan Pengembalian'; btnSpinner.classList.add('hidden'); }
+            if(btn){ btn.disabled = true; btnText.textContent = 'Simpan Pengembalian'; btnSpinner.classList.add('hidden'); }
         }
 
         function openReqEdit(id, kondisi){

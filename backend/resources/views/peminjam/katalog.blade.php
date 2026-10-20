@@ -65,10 +65,10 @@
                 @endphp
                 <div data-aos="fade-up" class="border rounded-xl p-4 flex flex-wrap items-center gap-4 card-lift hover:bg-gray-50 {{ $isReorder ? 'border-blue-500 bg-blue-50/50' : '' }}">
                     <div class="flex-shrink-0 w-20 h-20 relative">
-                        @if($alat->gambar)
-                            <img src="{{ asset($alat->gambar) }}" alt="{{ $alat->nama_alat }}"
+                        @if($alat->gambar_url)
+                            <img src="{{ $alat->gambar_url }}" alt="{{ $alat->nama_alat }}"
                                 class="w-full h-full object-cover rounded-lg border cursor-pointer hover:opacity-80 transition-opacity"
-                                @click="modalSrc = '{{ asset($alat->gambar) }}'; modalOpen = true"
+                                @click="modalSrc = '{{ $alat->gambar_url }}'; modalOpen = true"
                                 title="Klik untuk memperbesar">
                         @else
                             <div class="w-full h-full flex items-center justify-center bg-gray-100 rounded-lg border text-gray-400 text-xs">Tidak ada gambar</div>
@@ -80,16 +80,16 @@
                         <div class="text-xs text-gray-500">{{ $alat->kategori->nama_kategori ?? '-' }}</div>
                         <div class="text-xs text-gray-400 truncate">{{ $alat->deskripsi }}</div>
                         <div class="text-xs mt-1">
-                            @if($alat->stok <= 3)
-                                <span class="px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-bold">Hampir habis! Stok: {{ $alat->stok }}</span>
+                            @if($alat->stok_baik <= 3)
+                                <span class="px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-bold">Hampir habis! Stok: {{ $alat->stok_baik }}</span>
                             @else
-                                <span class="px-2 py-0.5 rounded-full bg-green-100 text-green-700">Tersedia Stok: {{ $alat->stok }}</span>
+                                <span class="px-2 py-0.5 rounded-full bg-green-100 text-green-700">Tersedia Stok: {{ $alat->stok_baik }}</span>
                             @endif
                         </div>
                     </div>
                     <div class="flex items-center gap-2 flex-shrink-0">
                         <label class="text-xs text-gray-600 whitespace-nowrap">Jumlah:</label>
-                        <input type="number" name="jumlah[]" :disabled="!isChecked('{{ $alat->id }}')" class="jumlah-input border rounded-lg px-2 py-1.5 text-sm w-16 text-center bg-white" :value="getJumlah('{{ $alat->id }}')" min="1" max="{{ $alat->stok }}" @input="updateJumlah('{{ $alat->id }}', $event.target.value)">
+                        <input type="number" name="jumlah[]" :disabled="!isChecked('{{ $alat->id }}')" class="jumlah-input border rounded-lg px-2 py-1.5 text-sm w-16 text-center bg-white" :value="getJumlah('{{ $alat->id }}')" min="1" max="{{ $alat->stok_baik }}" @input="updateJumlah('{{ $alat->id }}', $event.target.value)">
                     </div>
                 </div>
             @empty

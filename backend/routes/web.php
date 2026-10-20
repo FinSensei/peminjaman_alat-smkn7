@@ -41,6 +41,9 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::put('/alat/{id}', [AdminController::class, 'updateAlat'])->name('alat.update');
     Route::delete('/alat/{id}', [AdminController::class, 'destroyAlat'])->name('alat.destroy');
 
+    // Edit Kondisi Alat (Simple Baik/Rusak totals)
+    Route::put('/alat/{id}/kondisi', [AdminController::class, 'updateKondisi'])->name('alat.kondisi.update');
+
     //CRUD Peminjaman
     Route::get('/peminjaman', [AdminController::class, 'indexPeminjaman'])->name('peminjaman.index');
     Route::get('/peminjaman/create', [AdminController::class, 'createPeminjaman'])->name('peminjaman.create');
@@ -83,6 +86,10 @@ Route::middleware(['auth', 'role:petugas,admin'])->prefix('petugas')->name('petu
     // Pengembalian & Denda
     Route::post('/pengembalian/{id}', [PetugasController::class, 'prosesPengembalian'])
             ->name('pengembalian.proses');
+
+    // Get detail items for modal (Baik/Rusak split)
+    Route::get('/pengembalian/{id}/detail', [PetugasController::class, 'getPengembalianDetail'])
+            ->name('pengembalian.detail');
 
     // ReqEdit - Ajukan perbaikan ke Admin (TAMBAHAN)
     Route::post('/pengembalian/{id}/reqedit', [PetugasController::class, 'ajukanPerbaikan'])

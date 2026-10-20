@@ -12,7 +12,7 @@
 
     <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
         <div class="p-5 border-b border-gray-200 bg-gray-50 flex flex-col md:flex-row justify-between items-center gap-4">
-            <h3 class="text-lg font-bold text-gray-800">Daftar Alat Laboratorium</h3>
+            <h3 class="text-lg font-bold text-gray-800">Daftar Alat</h3>
 
             <!-- Form Search + Tombol Tambah -->
             <div class="flex items-center gap-3 w-full md:w-auto">
@@ -41,12 +41,14 @@
         <!-- Tabel Alat -->
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
-                <thead>
+<thead>
                     <tr class="bg-gray-100 text-gray-600 text-sm uppercase tracking-wider">
                         <th class="py-3 px-4 border-b">Gambar</th>
                         <th class="py-3 px-4 border-b">Nama Alat</th>
                         <th class="py-3 px-4 border-b">Kategori</th>
-                        <th class="py-3 px-4 border-b">Stok</th>
+                        <th class="py-3 px-4 border-b">Total Stok</th>
+                        <th class="py-3 px-4 border-b">Stok Baik</th>
+                        <th class="py-3 px-4 border-b">Stok Rusak</th>
                         <th class="py-3 px-4 border-b">Kondisi</th>
                         <th class="py-3 px-4 border-b">Aksi</th>
                     </tr>
@@ -55,9 +57,11 @@
                     @forelse($alats as $alat)
                         <tr class="hover:bg-gray-50 transition">
                             <td class="py-3 px-4 border-b">
-                                @if($alat->gambar)
-                                    <img src="{{ asset($alat->gambar) }}" alt="{{ $alat->nama_alat }}"
+                                @if($alat->gambar_url)
+                                    <img src="{{ $alat->gambar_url }}" alt="{{ $alat->nama_alat }}"
                                         class="w-12 h-12 object-cover rounded-lg border">
+                                @elseif($alat->gambar)
+                                    <span class="text-xs text-amber-600 italic">File hilang</span>
                                 @else
                                     <span class="text-xs text-gray-400 italic">Tidak ada</span>
                                 @endif
@@ -65,9 +69,12 @@
                             <td class="py-3 px-4 border-b font-medium text-gray-900">{{ $alat->nama_alat }}</td>
                             <td class="py-3 px-4 border-b">{{ $alat->kategori->nama_kategori ?? '-' }}</td>
                             <td class="py-3 px-4 border-b font-semibold">{{ $alat->stok }}</td>
-                            <td class="py-3 px-4 border-b">
+                            <td class="py-3 px-4 border-b font-semibold text-emerald-700">{{ $alat->stok_baik }}</td>
+                            <td class="py-3 px-4 border-b font-semibold text-red-700">{{ $alat->stok_rusak }}</td>
+<td class="py-3 px-4 border-b">
                                 <span class="inline-block px-2.5 py-1 text-xs font-medium rounded
-                                    @if(strtolower($alat->status_kondisi) == 'baik') bg-emerald-100 text-emerald-800
+                                    @if($alat->status_kondisi == 'Baik') bg-emerald-100 text-emerald-800
+                                    @elseif($alat->status_kondisi == 'Rusak') bg-red-100 text-red-800
                                     @else bg-amber-100 text-amber-800 @endif">
                                     {{ $alat->status_kondisi }}
                                 </span>
@@ -103,7 +110,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="py-4 text-center text-gray-500">Belum ada data alat.</td>
+                            <td colspan="8" class="py-4 text-center text-gray-500">Belum ada data alat.</td>
                         </tr>
                     @endforelse
                 </tbody>

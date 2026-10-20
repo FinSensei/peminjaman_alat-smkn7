@@ -40,7 +40,7 @@ class PeminjamController extends Controller
                 $q->where('kategori_id', $kategori_id);
             })
             ->latest()
-            ->paginate(12)
+            ->paginate(5)
             ->withQueryString();
 
         $kategoris = Kategori::all();
@@ -75,8 +75,8 @@ $stats = [
             foreach ($request->alat_id as $index => $alatId) {
                 $jumlah = $request->jumlah[$index];
                 $alat = Alat::lockForUpdate()->findOrFail($alatId);
-                if ($alat->stok < $jumlah) {
-                    throw new \Exception("Stok alat '{$alat->nama_alat}' tidak mencukupi. Sisa: {$alat->stok}");
+                if ($alat->stok_baik < $jumlah) {
+                    throw new \Exception("Stok Baik alat '{$alat->nama_alat}' tidak mencukupi. Tersedia: {$alat->stok_baik}");
                 }
             }
             $peminjaman = Peminjaman::create([
@@ -265,7 +265,7 @@ $stats = [
 
                     $stokTersedia = $alat->stok + ($alatLama[$alatId] ?? 0);
                     if ($stokTersedia < $jumlahBaru) {
-                        throw new \Exception("Stok alat '{$alat->nama_alat}' tidak mencukupi. Tersedia: {$stokTersedia}");
+                        throw new \Exception("Stok Baik alat '{$alat->nama_alat}' tidak mencukupi. Tersedia: {$stokTersedia}");
                     }
 
                     \App\Models\DetailPinjam::create([

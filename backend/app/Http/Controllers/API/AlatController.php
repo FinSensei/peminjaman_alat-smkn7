@@ -47,7 +47,7 @@ class AlatController extends Controller
     public function update(UpdateAlatRequest $request, Alat $alat):JsonResponse 
     { 
         $data = $request->validated(); 
-        $oldGambar = $alat->gambar;//Simpan path gambar lama lebih dahulu 
+        $oldGambar = $alat->gambarRelativePath();//Simpan path gambar lama lebih dahulu 
  
         DB::transaction(function () use ($request, &$data, $alat,$oldGambar) { 
             if ($request->hasFile('gambar')) {                 
@@ -80,8 +80,9 @@ public function destroy(Alat $alat): JsonResponse
         }
 
         DB::transaction(function () use ($alat) {
-            if ($alat->gambar) {
-                Storage::disk('public')->delete($alat->gambar);
+            $gambarRelatif = $alat->gambarRelativePath();
+            if ($gambarRelatif && Storage::disk('public')->exists($gambarRelatif)) {
+                Storage::disk('public')->delete($gambarRelatif);
             }
             $alat->delete();
         });

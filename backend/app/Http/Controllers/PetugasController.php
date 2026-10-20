@@ -76,15 +76,15 @@ class PetugasController extends Controller
             // Cek stok dulu dengan lock agar tidak race condition
             foreach ($peminjaman->detailPinjam as $detail) {
                 $alat = Alat::lockForUpdate()->findOrFail($detail->alat_id);
-                if ($alat->stok < $detail->jumlah) {
-                    throw new \Exception("Stok alat '{$alat->nama_alat}' tidak mencukupi. Sisa: {$alat->stok}, butuh: {$detail->jumlah}");
+                if ($alat->stok_baik < $detail->jumlah) {
+                    throw new \Exception("Stok Baik alat '{$alat->nama_alat}' tidak mencukupi. Tersedia: {$alat->stok_baik}, butuh: {$detail->jumlah}");
                 }
             }
             $peminjaman->update(['status' => 'dipinjam']);
 
             foreach ($peminjaman->detailPinjam as $detail) {
-                $alat = Alat::lockForUpdate()->findOrFail($detail->alat_id);
-                $alat->decrement('stok', $detail->jumlah);
+                $alat = Alat::lockForUpdate()->find($detail->alat_id);
+                $alat->decrement('stok_baik', $detail->jumlah);
             }
 
             DB::commit();
@@ -154,7 +154,10 @@ class PetugasController extends Controller
     public function prosesPengembalian(Request $request, $peminjamanId)
     {
         $request->validate([
-            'kondisi_kembali' => 'required|string',
+            'item_baik' => 'required|array',
+            'item_baik.*' => 'integer|min:0',
+            'item_rusak' => 'required|array',
+            'item_rusak.*' => 'integer|min:0',
             'denda' => 'nullable|integer|min:0',
         ]);
 
@@ -176,10 +179,29 @@ class PetugasController extends Controller
             $dendaAuto = $hariTelat * config('inventory.denda_per_hari', 5000);
             $dendaFinal = $request->filled('denda') ? (int)$request->denda : $dendaAuto;
 
-            Pengembalian::create([
+            // Validasi: baik + rusak harus sama dengan jumlah pinjam per alat
+            foreach ($peminjaman->detailPinjam as $detail) {
+                $baik = $request->input("item_baik.{$detail->alat_id}", 0);
+                $rusak = $request->input("item_rusak.{$detail->alat_id}", 0);
+                if ($baik + $rusak !== $detail->jumlah) {
+                    throw new \Exception("Jumlah Baik ($baik) + Rusak ($rusak) harus sama dengan jumlah pinjam ({$detail->jumlah}) untuk alat {$detail->alat->nama_alat}");
+                }
+            }
+
+            // Determine overall kondisi for pengembalian record (based on any rusak)
+            $adaRusak = false;
+            foreach ($peminjaman->detailPinjam as $detail) {
+                if ($request->input("item_rusak.{$detail->alat_id}", 0) > 0) {
+                    $adaRusak = true;
+                    break;
+                }
+            }
+            $kondisiOverall = $adaRusak ? 'Rusak' : 'Baik';
+
+            $pengembalian = Pengembalian::create([
                 'peminjaman_id' => $peminjaman->id,
                 'tgl_kembali' => now(),
-                'kondisi_kembali' => $request->kondisi_kembali,
+                'kondisi_kembali' => $kondisiOverall,
                 'denda' => $dendaFinal,
                 'petugas_id' => auth()->id(),
             ]);
@@ -187,22 +209,46 @@ class PetugasController extends Controller
             $statusAkhir = $hariTelat > 0 ? 'telat' : 'dikembalikan';
             $peminjaman->update(['status' => $statusAkhir]);
 
+            // Update detail_pinjam with baik/rusak counts and update alat stok_baik/stok_rusak
             foreach ($peminjaman->detailPinjam as $detail) {
+                $baik = $request->input("item_baik.{$detail->alat_id}", 0);
+                $rusak = $request->input("item_rusak.{$detail->alat_id}", 0);
+
+                $detail->update([
+                    'jumlah_baik' => $baik,
+                    'jumlah_rusak' => $rusak,
+                ]);
+
                 $alat = Alat::findOrFail($detail->alat_id);
-                $alat->stok += $detail->jumlah;
+                $alat->stok_baik += $baik;
+                $alat->stok_rusak += $rusak;
                 $alat->save();
             }
 
             DB::commit();
-            return redirect()->back()->with('success', 'Pengembalian berhasil dicatat dan stok dipulihkan.');
+            return redirect()->back()->with('success', 'Pengembalian berhasil dicatat dan stok diperbarui.');
         } catch (\Exception $e) {
             DB::rollback();
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
 
-    //pembuatan pengembalian dan cetak laporan mandiri
+    public function getPengembalianDetail($peminjamanId)
+    {
+        $peminjaman = Peminjaman::with('detailPinjam.alat')->findOrFail($peminjamanId);
+        
+        $items = $peminjaman->detailPinjam->map(function ($detail) {
+            return [
+                'alat_id' => $detail->alat_id,
+                'nama_alat' => $detail->alat->nama_alat ?? '-',
+                'jumlah' => $detail->jumlah,
+            ];
+        })->values();
 
+        return response()->json(['items' => $items]);
+    }
+
+    //pembuatan pengembalian dan cetak laporan mandiri
 
 
     // =============================

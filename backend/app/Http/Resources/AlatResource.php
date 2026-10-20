@@ -14,7 +14,7 @@ class AlatResource extends JsonResource
             'stok' => $this->stok, 
             'status_kondisi' => $this->status_kondisi, 
             'deskripsi' => $this->deskripsi, 
-            'gambar' => $this->gambar ? url('storage/' . $this->gambar) : null, 
+            'gambar' => $this->gambar_url, 
             // Eager load relasi kategori jika tersedia 
             'kategori' => new KategoriResource($this->whenLoaded('kategori')), 
             'created_at' => $this->created_at->format('Y-m-d H:i:s'), 

@@ -52,7 +52,7 @@ class AdminController extends Controller
     {
         $search = $request->input('search');
 
-        $alats = Alat::with('kategori')
+        $query = Alat::with('kategori')
             ->when($search, function ($query, $search) {
                 return $query->where(function ($q) use ($search) {
                     $q->where('nama_alat', 'like', "%{$search}%")
@@ -61,12 +61,18 @@ class AdminController extends Controller
                           $qq->where('nama_kategori', 'like', "%{$search}%");
                       });
                 });
-            })
-            ->latest()
+            });
+
+        // Get counts for summary cards (before pagination)
+        $totalAlat = (clone $query)->count();
+        $alatBaik = (clone $query)->where('status_kondisi', 'Baik')->count();
+        $alatRusak = (clone $query)->where('status_kondisi', 'Rusak')->count();
+
+        $alats = $query->latest()
             ->paginate(10)
             ->withQueryString();
 
-        return view('admin.alat.index', compact('alats', 'search'));
+        return view('admin.alat.index', compact('alats', 'search', 'totalAlat', 'alatBaik', 'alatRusak'));
     }
     
     // 2. Menampilkan form tambah alat
@@ -83,12 +89,24 @@ class AdminController extends Controller
             'nama_alat' => 'required|string|max:255',
             'kategori_id' => 'required|exists:kategori,id',
             'stok' => 'required|integer|min:0',
-            'status_kondisi' => 'required|string|max:100',
+            'stok_baik' => 'required|integer|min:0',
+            'stok_rusak' => 'required|integer|min:0',
+            'status_kondisi' => 'required|in:Baik,Rusak',
             'deskripsi' => 'nullable|string',
             'gambar' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
-        $data = $request->only(['nama_alat', 'kategori_id', 'stok', 'status_kondisi', 'deskripsi']);
+        // Validate stok_baik + stok_rusak = stok tersedia (stok total - unit yang sedang dipinjam)
+        $stok = (int) $request->stok;
+        $stokBaik = (int) $request->stok_baik;
+        $stokRusak = (int) $request->stok_rusak;
+        $stokTersedia = $stok;
+
+        if ($stokBaik + $stokRusak !== $stokTersedia) {
+            return redirect()->back()->withErrors(['stok_baik' => "Stok Baik + Stok Rusak harus sama dengan Stok tersedia ($stokTersedia)"])->withInput();
+        }
+
+        $data = $request->only(['nama_alat', 'kategori_id', 'stok', 'stok_baik', 'stok_rusak', 'status_kondisi', 'deskripsi']);
 
         // Handle Upload Gambar jika ada (pakai Storage disk public agar aman)
         if ($request->hasFile('gambar')) {
@@ -106,7 +124,9 @@ class AdminController extends Controller
     {
         $alat = Alat::findOrFail($id);
         $kategoris = Kategori::all();
-        return view('admin.alat.edit', compact('alat', 'kategoris'));
+        $dipinjamAktif = $alat->jumlahDipinjamAktif();
+
+        return view('admin.alat.edit', compact('alat', 'kategoris', 'dipinjamAktif'));
     }
 
     // 5. Memperbarui data alat
@@ -118,17 +138,36 @@ class AdminController extends Controller
             'nama_alat' => 'required|string|max:255',
             'kategori_id' => 'required|exists:kategori,id',
             'stok' => 'required|integer|min:0',
-            'status_kondisi' => 'required|string|max:100',
+            'stok_baik' => 'required|integer|min:0',
+            'stok_rusak' => 'required|integer|min:0',
+            'status_kondisi' => 'required|in:Baik,Rusak',
             'deskripsi' => 'nullable|string',
             'gambar' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
-        $data = $request->only(['nama_alat', 'kategori_id', 'stok', 'status_kondisi', 'deskripsi']);
+        // Validate stok_baik + stok_rusak = stok tersedia (stok total - unit yang sedang dipinjam)
+        $stok = (int) $request->stok;
+        $stokBaik = (int) $request->stok_baik;
+        $stokRusak = (int) $request->stok_rusak;
+        $dipinjamAktif = $alat->jumlahDipinjamAktif();
+
+        if ($stok < $dipinjamAktif) {
+            return redirect()->back()->withErrors(['stok' => "Total Stok tidak boleh lebih kecil dari jumlah yang sedang dipinjam ($dipinjamAktif)"])->withInput();
+        }
+
+        $stokTersedia = $stok - $dipinjamAktif;
+
+        if ($stokBaik + $stokRusak !== $stokTersedia) {
+            return redirect()->back()->withErrors(['stok_baik' => "Stok Baik + Stok Rusak harus sama dengan Stok tersedia ($stokTersedia)"])->withInput();
+        }
+
+        $data = $request->only(['nama_alat', 'kategori_id', 'stok', 'stok_baik', 'stok_rusak', 'status_kondisi', 'deskripsi']);
 
         // Handle Update Gambar jika ada file baru (Storage)
         if ($request->hasFile('gambar')) {
-            if ($alat->gambar && Storage::disk('public')->exists(str_replace('storage/', '', $alat->gambar))) {
-                Storage::disk('public')->delete(str_replace('storage/', '', $alat->gambar));
+            $lama = $alat->gambarRelativePath();
+            if ($lama && Storage::disk('public')->exists($lama)) {
+                Storage::disk('public')->delete($lama);
             }
             $path = $request->file('gambar')->store('alat', 'public');
             $data['gambar'] = 'storage/' . $path;
@@ -157,16 +196,92 @@ class AdminController extends Controller
         }
 
         // Hapus file gambar fisik jika ada (Storage)
-        if ($alat->gambar) {
-            $rel = str_replace('storage/', '', $alat->gambar);
-            if (Storage::disk('public')->exists($rel)) {
-                Storage::disk('public')->delete($rel);
-            }
+        $gambarRelatif = $alat->gambarRelativePath();
+        if ($gambarRelatif && Storage::disk('public')->exists($gambarRelatif)) {
+            Storage::disk('public')->delete($gambarRelatif);
         }
 
         $alat->delete();
 
         return redirect()->route('admin.alat.index')->with('success', 'Data alat berhasil dihapus.');
+    }
+
+    // Update kondisi (Baik/Rusak) untuk alat - simple totals
+    public function updateKondisi(Request $request, $id)
+    {
+        $request->validate([
+            'baik' => 'required|integer|min:0',
+            'rusak' => 'required|integer|min:0',
+            'kondisi_baik' => 'required|integer|min:0',
+            'kondisi_rusak' => 'required|integer|min:0',
+        ]);
+
+        $alat = Alat::findOrFail($id);
+
+        // Get total returned items for this alat
+        $totalReturned = DetailPinjam::where('alat_id', $alat->id)
+            ->whereHas('peminjaman', function($q) {
+                $q->whereHas('pengembalian');
+            })
+            ->sum('jumlah');
+
+        if ($totalReturned === 0) {
+            return redirect()->back()->with('error', 'Belum ada riwayat pengembalian untuk alat ini.');
+        }
+
+        // Validate: total baik + rusak cannot exceed total returned
+        $totalRequested = $request->baik + $request->rusak;
+        if ($totalRequested > $totalReturned) {
+            return redirect()->back()->with('error', "Total Baik + Rusak ($totalRequested) tidak boleh melebihi total yang sudah dikembalikan ($totalReturned).");
+        }
+
+        // Get all returned detail_pinjam records for this alat
+        $details = DetailPinjam::where('alat_id', $alat->id)
+            ->whereHas('peminjaman', function($q) {
+                $q->whereHas('pengembalian');
+            })
+            ->orderBy('id')
+            ->get();
+
+        DB::beginTransaction();
+        try {
+            // Distribute the baik/rusak proportionally across detail records
+            $remainingBaik = $request->baik;
+            $remainingRusak = $request->rusak;
+
+            foreach ($details as $detail) {
+                if ($remainingBaik <= 0 && $remainingRusak <= 0) {
+                    // Zero out remaining records
+                    $detail->update(['jumlah_baik' => 0, 'jumlah_rusak' => 0]);
+                    continue;
+                }
+
+                $allocateBaik = min($remainingBaik, $detail->jumlah);
+                $allocateRusak = min($remainingRusak, $detail->jumlah - $allocateBaik);
+                
+                // If we have more remaining than this detail's jumlah, allocate all remaining
+                if ($remainingBaik > 0 && $allocateBaik === 0) {
+                    $allocateBaik = min($remainingBaik, $detail->jumlah);
+                }
+                if ($remainingRusak > 0 && $allocateRusak === 0) {
+                    $allocateRusak = min($remainingRusak, $detail->jumlah - $allocateBaik);
+                }
+
+                $detail->update([
+                    'jumlah_baik' => $allocateBaik,
+                    'jumlah_rusak' => $allocateRusak,
+                ]);
+
+                $remainingBaik -= $allocateBaik;
+                $remainingRusak -= $allocateRusak;
+            }
+
+            DB::commit();
+            return redirect()->back()->with('success', 'Kondisi alat berhasil diperbarui.');
+        } catch (\Exception $e) {
+            DB::rollback();
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
     }
 
     // CRUD User (Manajemen User Admin, Petugas, Peminjam)
@@ -457,8 +572,8 @@ class AdminController extends Controller
                 $alat = Alat::findOrFail($alatId);
 
                 // Validasi stok
-                if ($alat->stok < $jumlahPinjam) {
-                    throw new \Exception("Stok alat '{$alat->nama_alat}' tidak mencukupi.");
+                if ($alat->stok_baik < $jumlahPinjam) {
+                    throw new \Exception("Stok Baik alat '{$alat->nama_alat}' tidak mencukupi.");
                 }
 
                 DetailPinjam::create([
@@ -498,8 +613,8 @@ class AdminController extends Controller
             if ($lama === 'diajukan' && $baru === 'dipinjam') {
                 foreach ($p->detailPinjam as $d) {
                     $a = Alat::lockForUpdate()->find($d->alat_id);
-                    if (!$a || $a->stok < $d->jumlah) { throw new \Exception('Stok tidak mencukupi.'); }
-                    $a->decrement('stok', $d->jumlah);
+                    if (!$a || $a->stok_baik < $d->jumlah) { throw new \Exception('Stok Baik tidak mencukupi.'); }
+                    $a->decrement('stok_baik', $d->jumlah);
                 }
                 $p->update(['status' => 'dipinjam']);
             } elseif ($baru === 'dikembalikan' && !$p->pengembalian()->exists()) {
@@ -514,7 +629,12 @@ class AdminController extends Controller
                     'petugas_id' => auth()->id(),
                 ]);
                 if (in_array($lama, ['dipinjam', 'telat'])) {
-                    foreach ($p->detailPinjam as $d) { Alat::lockForUpdate()->find($d->alat_id)?->increment('stok', $d->jumlah); }
+                    // Unit kembali ke gudang dan diasumsikan kondisi baik
+                    foreach ($p->detailPinjam as $d) {
+                        $a = Alat::lockForUpdate()->find($d->alat_id);
+                        if (!$a) continue;
+                        $a->increment('stok_baik', $d->jumlah);
+                    }
                 }
                 $p->update(['status' => $telat > 0 ? 'telat' : 'dikembalikan']);
             } else {
@@ -533,9 +653,10 @@ class AdminController extends Controller
     {
         $peminjaman = Peminjaman::with('detailPinjam')->findOrFail($id);
 
-        if ($peminjaman->status == 'dipinjam') {
+        if (in_array($peminjaman->status, ['dipinjam', 'req_kembali', 'telat'])) {
+            // Peminjaman dihapus: unit kembali ke gudang
             foreach ($peminjaman->detailPinjam as $detail) {
-                $detail->alat->increment('stok', $detail->jumlah);
+                $detail->alat->increment('stok_baik', $detail->jumlah);
             }
         }
 
@@ -687,16 +808,13 @@ class AdminController extends Controller
                 'petugas_id' => auth()->id(),
             ]);
 
-            // Mengembalikan stok alat
+            // Mengembalikan stok alat (unit kembali ke gudang, diasumsikan kondisi baik)
             foreach ($peminjaman->detailPinjam as $detail) {
 
                 $alat = $detail->alat;
 
                 if ($alat) {
-                    $alat->increment(
-                        'stok',
-                        $detail->jumlah
-                    );
+                    $alat->increment('stok_baik', $detail->jumlah);
                 }
             }
 
