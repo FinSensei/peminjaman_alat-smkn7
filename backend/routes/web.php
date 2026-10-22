@@ -75,7 +75,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 });
 
 // ======================= PETUGAS =======================
-Route::middleware(['auth', 'role:petugas,admin'])->prefix('petugas')->name('petugas.')->group(function () {
+Route::middleware(['auth', 'role:petugas'])->prefix('petugas')->name('petugas.')->group(function () {
     Route::get('/dashboard', [PetugasController::class, 'dashboard'])->name('dashboard');
     // Peminjaman & Persetujuan
     Route::get('/peminjaman', [PetugasController::class, 'indexPeminjaman'])->name('peminjaman.index');
@@ -123,16 +123,18 @@ Route::middleware(['auth', 'role:peminjam'])->prefix('peminjam')->name('peminjam
 });
 
 // ======================= AUTH =======================
-// Route Tamu (Belum Login)
+// Route Register
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
+    Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
+    Route::post('/register', [AuthController::class, 'register']);
 });
 
 // Route Logout (Harus sudah login)
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
-// ======================= NOTIFIKASI (semua role login) =======================
+// ======================= NOTIFIKASI (semua role) =======================
 Route::middleware('auth')->group(function () {
     Route::get('/notifikasi/{id}/buka', [NotifikasiController::class, 'buka'])->name('notifikasi.buka');
     Route::post('/notifikasi/baca-semua', [NotifikasiController::class, 'bacaSemua'])->name('notifikasi.bacaSemua');

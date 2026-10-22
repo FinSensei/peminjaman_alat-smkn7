@@ -90,6 +90,7 @@
                                 <span class="block font-semibold">
                                     Rencana: {{ $peminjaman->tgl_kembali_plan }}
                                 </span>
+
                             </td>
 
                             <td class="py-3 px-4 border-b">
@@ -143,8 +144,8 @@
                 @csrf
                 @method('PUT')
                 <input type="hidden" name="status" value="dikembalikan">
-                <label class="block text-xs font-semibold text-gray-600 mb-1">Kondisi Kembali (kosong = bagus)</label>
-                <input type="text" name="kondisi_kembali" placeholder="bagus" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 mb-3 focus:outline-none">
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Kondisi Kembali (kosong = Baik)</label>
+                <input type="text" name="kondisi_kembali" placeholder="Baik" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 mb-3 focus:outline-none">
                 <label class="block text-xs font-semibold text-gray-600 mb-1">Denda manual (kosong = otomatis)</label>
                 <input type="number" name="denda" min="0" placeholder="otomatis" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none">
                 <div class="flex gap-2 mt-4">

@@ -18,7 +18,7 @@ class TandaiTelat extends Command
             ->update(['status' => 'telat']);
         $this->info("Ditandai telat: {$n} peminjaman.");
 
-        // NOTIF H-3: dipinjam & tenggat tepat 3 hari lagi (1x per hari)
+        // NOTIF H-3
         $h3 = Peminjaman::where('status', 'dipinjam')
             ->whereDate('tgl_kembali_plan', now()->addDays(3)->toDateString())->get();
         foreach ($h3 as $pm) {

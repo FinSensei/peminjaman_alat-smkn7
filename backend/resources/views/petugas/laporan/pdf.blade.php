@@ -82,7 +82,7 @@
         </h1>
 
         <p>
-            Sistem Peminjaman Alat Laboratorium
+            Sistem Peminjaman Alat 
         </p>
 
     </div>

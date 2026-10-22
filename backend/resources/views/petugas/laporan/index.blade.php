@@ -86,11 +86,6 @@
                         Dikembalikan
                     </option>
 
-                    <option value="telat"
-                        {{ $status === 'telat' ? 'selected' : '' }}>
-                        Telat
-                    </option>
-
                 </select>
 
             </div>

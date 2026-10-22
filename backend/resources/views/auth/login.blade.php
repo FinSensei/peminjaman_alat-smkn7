@@ -32,6 +32,9 @@
         @if(session('error'))
             <div class="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm fade-up">⚠️ {{ session('error') }}</div>
         @endif
+        @if(session('success'))
+            <div class="mb-4 p-3 bg-green-50 border border-green-200 text-green-700 rounded-xl text-sm fade-up">✅ {{ session('success') }}</div>
+        @endif
         @if($errors->any())
             <div class="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm fade-up">
                 <ul class="list-disc pl-5 mb-0">
@@ -64,6 +67,10 @@
             <button type="submit"
                 class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-2.5 rounded-xl hover:from-blue-700 hover:to-indigo-700 hover:shadow-lg hover:-translate-y-0.5 transition">Masuk →</button>
         </form>
+        <p class="text-sm text-gray-500 mt-6 text-center fade-up fade-up-3">
+            Belum punya akun?     
+            <a href="{{ route('register') }}" class="text-blue-600 font-semibold hover:underline"> Daftar di sini</a>
+        </p>
     </div>
 </div>
 </body>

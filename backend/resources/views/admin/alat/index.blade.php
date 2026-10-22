@@ -41,7 +41,7 @@
         <!-- Tabel Alat -->
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
-<thead>
+                <thead>
                     <tr class="bg-gray-100 text-gray-600 text-sm uppercase tracking-wider">
                         <th class="py-3 px-4 border-b">Gambar</th>
                         <th class="py-3 px-4 border-b">Nama Alat</th>
@@ -49,7 +49,6 @@
                         <th class="py-3 px-4 border-b">Total Stok</th>
                         <th class="py-3 px-4 border-b">Stok Baik</th>
                         <th class="py-3 px-4 border-b">Stok Rusak</th>
-                        <th class="py-3 px-4 border-b">Kondisi</th>
                         <th class="py-3 px-4 border-b">Aksi</th>
                     </tr>
                 </thead>
@@ -71,14 +70,6 @@
                             <td class="py-3 px-4 border-b font-semibold">{{ $alat->stok }}</td>
                             <td class="py-3 px-4 border-b font-semibold text-emerald-700">{{ $alat->stok_baik }}</td>
                             <td class="py-3 px-4 border-b font-semibold text-red-700">{{ $alat->stok_rusak }}</td>
-<td class="py-3 px-4 border-b">
-                                <span class="inline-block px-2.5 py-1 text-xs font-medium rounded
-                                    @if($alat->status_kondisi == 'Baik') bg-emerald-100 text-emerald-800
-                                    @elseif($alat->status_kondisi == 'Rusak') bg-red-100 text-red-800
-                                    @else bg-amber-100 text-amber-800 @endif">
-                                    {{ $alat->status_kondisi }}
-                                </span>
-                            </td>
                             <td class="py-3 px-4 border-b">
                                 <div class="flex items-center space-x-2">
                                     <a href="{{ route('admin.alat.edit', $alat->id) }}"

@@ -64,7 +64,12 @@
                                     <div class="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm">{{ strtoupper(substr($user->name, 0, 1)) }}</div>
                                 @endif
                             </td>
-                            <td class="py-3 px-4 border-b font-medium text-gray-900">{{ $user->name }}</td>
+                            <td class="py-3 px-4 border-b font-medium text-gray-900">
+                                {{ $user->name }}
+                                @if($user->id === auth()->id())
+                                <span class="ml-1 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide rounded bg-blue-100 text-blue-700">Anda</span>
+                                @endif
+                            </td>
                             <td class="py-3 px-4 border-b">{{ $user->email }}</td>
                             <td class="py-3 px-4 border-b">
                                 <span class="px-2.5 py-1 text-xs font-semibold rounded-full
@@ -84,11 +89,13 @@
                             <td class="py-3 px-4 border-b">{{ $user->no_hp ?? '-' }}</td>
                             <td class="py-3 px-4 border-b">
                                 <div class="flex items-center space-x-2">
-                                    <!-- Tombol Edit -->
+                                    <!-- Tombol Edit (tidak ditampilkan untuk akun sendiri) -->
+                                    @if($user->id !== auth()->id())
                                     <a href="{{ route('admin.user.edit', $user->id) }}"
                                     class="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded text-xs font-semibold transition">
                                         Edit
                                     </a>
+                                    @endif
 
                                     @if($user->status === 'aktif')
                                     @if($user->id !== auth()->id())

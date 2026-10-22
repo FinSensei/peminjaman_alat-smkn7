@@ -670,12 +670,6 @@
                 ht=Math.max(0, Math.ceil((t-p)/86400000));
                 planDate = p.toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'});
             }
-            
-            // Update modal subtitle with plan date and status
-            let subtitle = 'Rencana: ' + planDate;
-            if(ht > 0) subtitle += ' | <span class="text-red-600 font-medium">Telat ' + ht + ' hari</span>';
-            else if(ht === 0) subtitle += ' | <span class="text-yellow-600 font-medium">Jatuh Tempo Hari Ini</span>';
-            document.getElementById('modalSubtitle').innerHTML = subtitle;
 
             if(ht > 0){
                 document.getElementById('badgeWrap').style.display = '';

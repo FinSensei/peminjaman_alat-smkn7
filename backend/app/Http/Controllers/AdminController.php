@@ -69,7 +69,7 @@ class AdminController extends Controller
         $alatRusak = (clone $query)->where('status_kondisi', 'Rusak')->count();
 
         $alats = $query->latest()
-            ->paginate(10)
+            ->paginate(5)
             ->withQueryString();
 
         return view('admin.alat.index', compact('alats', 'search', 'totalAlat', 'alatBaik', 'alatRusak'));
@@ -295,7 +295,7 @@ class AdminController extends Controller
                 ->orWhere('role', 'like', "%{$search}%");
         })
             ->latest()
-            ->paginate(10) // Tampilkan 10 data per halaman
+            ->paginate(5)
             ->withQueryString(); // Memastikan parameter search tetap ada saat pindah halaman
 
         return view('admin.user.index', compact('users', 'search'));
@@ -332,6 +332,13 @@ class AdminController extends Controller
     public function editUser($id)
     {
         $user = User::findOrFail($id);
+
+        // Proteksi: akun sendiri tidak bisa diedit dari halaman Kelola User
+        if ($user->id === auth()->id()) {
+            return redirect()->route('admin.user.index')
+                ->with('error', 'Tidak bisa mengedit akun sendiri.');
+        }
+
         return view('admin.user.edit', compact('user'));
     }
 
@@ -340,9 +347,10 @@ class AdminController extends Controller
     {
         $user = User::findOrFail($id);
 
-        // Proteksi: admin tidak bisa ganti role sendiri
-        if ($user->id === auth()->id() && $request->role !== $user->role) {
-            return redirect()->back()->with('error', 'Tidak bisa mengubah role sendiri.');
+        // Proteksi: admin tidak bisa mengedit akun sendiri
+        if ($user->id === auth()->id()) {
+            return redirect()->route('admin.user.index')
+                ->with('error', 'Tidak bisa mengedit akun sendiri.');
         }
 
         $request->validate([
@@ -528,7 +536,7 @@ class AdminController extends Controller
                     });
             })
             ->latest()
-            ->paginate(10)
+            ->paginate(5)
             ->withQueryString();
 
         return view('admin.peminjaman.index', compact('peminjamans', 'search'));
@@ -591,7 +599,7 @@ class AdminController extends Controller
         }
     }
 
-    // 4. Memperbarui status peminjaman (dikembalikan = final terkunci; telat otomatis)
+    // 4. Memperbarui status peminjaman 
     public function updateStatusPeminjaman(Request $request, $id)
     {
         $p = Peminjaman::with('detailPinjam.alat')->findOrFail($id);
@@ -610,6 +618,9 @@ class AdminController extends Controller
             if (in_array($lama, ['dipinjam', 'telat']) && $baru === 'diajukan') {
                 throw new \Exception('Tidak bisa kembali ke Diajukan. Selesaikan lewat pengembalian.');
             }
+            if (in_array($lama, ['diajukan', 'telat']) && $baru === 'dikembalikan') {
+                throw new \Exception('tidak bisa langsung ke pengembalian! lewati dulu proses peminjaman');
+            }
             if ($lama === 'diajukan' && $baru === 'dipinjam') {
                 foreach ($p->detailPinjam as $d) {
                     $a = Alat::lockForUpdate()->find($d->alat_id);
@@ -624,7 +635,7 @@ class AdminController extends Controller
                 $auto = $telat * config('inventory.denda_per_hari', 5000);
                 Pengembalian::create([
                     'peminjaman_id' => $p->id, 'tgl_kembali' => now(),
-                    'kondisi_kembali' => $request->filled('kondisi_kembali') ? $request->kondisi_kembali : 'bagus',
+                    'kondisi_kembali' => $request->filled('kondisi_kembali') ? $request->kondisi_kembali : 'Baik',
                     'denda' => $request->filled('denda') ? (int) $request->denda : $auto,
                     'petugas_id' => auth()->id(),
                 ]);
@@ -671,7 +682,6 @@ class AdminController extends Controller
         $search = $request->input('search');
         $filter = $request->input('filter');
 
-        // TAMBAHAN: data ReqEdit untuk tab (posisi lama tetap)
         $menungguPerbaikan = Pengembalian::with(['peminjaman.user','peminjaman.detailPinjam.alat','petugas'])
             ->where('butuh_perbaikan', true)->where('status_perbaikan', 'pending')
             ->orderByDesc('updated_at')->get();
@@ -687,7 +697,7 @@ class AdminController extends Controller
             });
         })
         ->orderByDesc('tgl_kembali')
-        ->paginate(10)
+        ->paginate(5)
         ->withQueryString();
 
         return view(

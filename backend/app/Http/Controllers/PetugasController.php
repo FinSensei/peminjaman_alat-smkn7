@@ -128,7 +128,7 @@ class PetugasController extends Controller
 
             DB::commit();
 
-            // NOTIF: kabari peminjam ditolak (data sudah dihapus, simpan ID saja)
+            // NOTIF: kabari peminjam ditolak 
             \App\Models\Notifikasi::create([
                 'user_id' => $uidTolak,
                 'judul' => 'Pengajuan ditolak #' . $pidTolak,
@@ -288,7 +288,7 @@ class PetugasController extends Controller
             });
         })
         ->orderByDesc('tgl_kembali')
-        ->paginate(10)
+        ->paginate(5)
         ->withQueryString();
 
         return view(
@@ -328,7 +328,7 @@ class PetugasController extends Controller
             $query->where('status', $status);
         })
         ->latest()
-        ->paginate(15)
+        ->paginate(10)
         ->withQueryString();
 
         return view(

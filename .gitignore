@@ -23,8 +23,9 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 identity.json
-backend/public/vendor/tailwindcss/tailwindcss
 backend/vendor/
 backend/public/storage
+backend/node_modules
+backend/public/vendor/tailwindcss/tailwindcss
 backup/
-
+*:Zone.Identifier
