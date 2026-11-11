@@ -46,6 +46,12 @@
         </div>
 
         <div class="mb-4">
+            <label class="block text-gray-700 text-sm font-semibold mb-2">Alamat (Opsional)</label>
+            <textarea name="alamat" rows="3"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">{{ old('alamat') }}</textarea>
+        </div>
+
+        <div class="mb-4">
             <label class="block text-gray-700 text-sm font-semibold mb-2">Foto Profil (Opsional, max 2MB)</label>
             <input type="file" name="foto" accept="image/*"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">

@@ -50,6 +50,7 @@
                         <th class="py-3 px-4 border-b">Role / Hak Akses</th>
                         <th class="py-3 px-4 border-b">Status</th>
                         <th class="py-3 px-4 border-b">No. HP</th>
+                        <th class="py-3 px-4 border-b">Alamat</th>
                         <th class="py-3 px-4 border-b">Aksi</th>
                     </tr>
                 </thead>
@@ -87,6 +88,7 @@
                                 @endif
                             </td>
                             <td class="py-3 px-4 border-b">{{ $user->no_hp ?? '-' }}</td>
+                            <td class="py-3 px-4 border-b">{{ Str::limit($user->alamat, 30) ?? '-' }}</td>
                             <td class="py-3 px-4 border-b">
                                 <div class="flex items-center space-x-2">
                                     <!-- Tombol Edit (tidak ditampilkan untuk akun sendiri) -->
@@ -140,7 +142,7 @@
                             </td>
                         </tr>
                     @empty
-                        <td colspan="7" class="py-4 text-center text-gray-500">Belum ada data pengguna.</td>
+                        <td colspan="8" class="py-4 text-center text-gray-500">Belum ada data pengguna.</td>
                     @endforelse
                 </tbody>
             </table>

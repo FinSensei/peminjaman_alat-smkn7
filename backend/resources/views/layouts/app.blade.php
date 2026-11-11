@@ -56,13 +56,17 @@
         </nav>
         <div class="p-4 border-t border-gray-400 flex items-center gap-3">
             @if(auth()->user()->foto_profile)
-                <img src="{{ asset('storage/'.auth()->user()->foto_profile) }}" alt="Foto" class="w-9 h-9 rounded-full object-cover flex-shrink-0">
+                <a href="{{ route('profile.index') }}" class="flex items-center gap-3 min-w-0">
+                    <img src="{{ asset('storage/'.auth()->user()->foto_profile) }}" alt="Foto" class="w-9 h-9 rounded-full object-cover flex-shrink-0 hover:ring-2 hover:ring-blue-400 transition">
+                </a>
             @else
-                <div class="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center font-bold text-white flex-shrink-0">{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}</div>
+                <a href="{{ route('profile.index') }}" class="flex items-center gap-3 min-w-0">
+                    <div class="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center font-bold text-white flex-shrink-0 hover:ring-2 hover:ring-blue-400 transition">{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}</div>
+                </a>
             @endif
             <div class="min-w-0">
-                <div class="text-white text-sm font-semibold truncate">{{ auth()->user()->name }}</div>
-                <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-600/30 text-blue-200 font-bold">ADMIN</span>
+                <a href="{{ route('profile.index') }}" class="text-white text-sm font-semibold truncate hover:underline">{{ auth()->user()->name }}</a>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-600/30 text-blue-200 font-bold uppercase">{{ auth()->user()->role }}</span>
             </div>
         </div>
         @endif
@@ -92,13 +96,17 @@
         </nav>
         <div class="p-4 border-t border-gray-400 flex items-center gap-3">
             @if(auth()->user()->foto_profile)
-                <img src="{{ asset('storage/'.auth()->user()->foto_profile) }}" alt="Foto" class="w-9 h-9 rounded-full object-cover flex-shrink-0">
+                <a href="{{ route('profile.index') }}" class="flex items-center gap-3 min-w-0">
+                    <img src="{{ asset('storage/'.auth()->user()->foto_profile) }}" alt="Foto" class="w-9 h-9 rounded-full object-cover flex-shrink-0 hover:ring-2 hover:ring-blue-400 transition">
+                </a>
             @else
-                <div class="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center font-bold text-white flex-shrink-0">{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}</div>
+                <a href="{{ route('profile.index') }}" class="flex items-center gap-3 min-w-0">
+                    <div class="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center font-bold text-white flex-shrink-0 hover:ring-2 hover:ring-blue-400 transition">{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}</div>
+                </a>
             @endif
             <div class="min-w-0">
-                <div class="text-white text-sm font-semibold truncate">{{ auth()->user()->name }}</div>
-                <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-600/30 text-blue-200 font-bold">PETUGAS</span>
+                <a href="{{ route('profile.index') }}" class="text-white text-sm font-semibold truncate hover:underline">{{ auth()->user()->name }}</a>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-600/30 text-blue-200 font-bold uppercase">{{ auth()->user()->role }}</span>
             </div>
         </div>
         @endif
@@ -126,13 +134,17 @@
         </nav>
         <div class="p-4 border-t border-gray-400 flex items-center gap-3">
             @if(auth()->user()->foto_profile)
-                <img src="{{ asset('storage/'.auth()->user()->foto_profile) }}" alt="Foto" class="w-9 h-9 rounded-full object-cover flex-shrink-0">
+                <a href="{{ route('profile.index') }}" class="flex items-center gap-3 min-w-0">
+                    <img src="{{ asset('storage/'.auth()->user()->foto_profile) }}" alt="Foto" class="w-9 h-9 rounded-full object-cover flex-shrink-0 hover:ring-2 hover:ring-blue-400 transition">
+                </a>
             @else
-                <div class="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center font-bold text-white flex-shrink-0">{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}</div>
+                <a href="{{ route('profile.index') }}" class="flex items-center gap-3 min-w-0">
+                    <div class="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center font-bold text-white flex-shrink-0 hover:ring-2 hover:ring-blue-400 transition">{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}</div>
+                </a>
             @endif
             <div class="min-w-0">
-                <div class="text-white text-sm font-semibold truncate">{{ auth()->user()->name }}</div>
-                <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-600/30 text-blue-200 font-bold">PEMINJAM</span>
+                <a href="{{ route('profile.index') }}" class="text-white text-sm font-semibold truncate hover:underline">{{ auth()->user()->name }}</a>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-600/30 text-blue-200 font-bold uppercase">{{ auth()->user()->role }}</span>
             </div>
         </div>
         @endif

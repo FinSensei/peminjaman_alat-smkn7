@@ -314,6 +314,8 @@ class AdminController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6',
             'role' => 'required|in:admin,petugas,peminjam',
+            'no_hp' => 'nullable|string|max:20',
+            'alamat' => 'nullable|string|max:1000',
             'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
@@ -323,6 +325,7 @@ class AdminController extends Controller
             'password' => Hash::make($request->password),
             'role' => $request->role,
             'no_hp' => $request->no_hp,
+            'alamat' => $request->alamat,
             'foto_profile' => $request->hasFile('foto') ? $request->file('foto')->store('foto-profil', 'public') : null,
         ]);
 
@@ -357,6 +360,8 @@ class AdminController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $id,
             'role' => 'required|in:admin,petugas,peminjam',
+            'no_hp' => 'nullable|string|max:20',
+            'alamat' => 'nullable|string|max:1000',
             'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
@@ -365,6 +370,7 @@ class AdminController extends Controller
             'email' => $request->email,
             'role' => $request->role,
             'no_hp' => $request->no_hp,
+            'alamat' => $request->alamat,
         ];
 
         if ($request->hasFile('foto')) {

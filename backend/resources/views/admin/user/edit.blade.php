@@ -55,6 +55,12 @@
         </div>
 
         <div class="mb-6">
+            <label class="block text-gray-700 text-sm font-semibold mb-2">Alamat</label>
+            <textarea name="alamat" rows="3"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">{{ old('alamat', $user->alamat) }}</textarea>
+        </div>
+
+        <div class="mb-6">
             <label class="block text-gray-700 text-sm font-semibold mb-2">Foto Profil (kosongkan bila tidak diganti)</label>
             @if($user->foto_profile)
                 <img src="{{ asset('storage/'.$user->foto_profile) }}" alt="Foto" class="w-16 h-16 rounded-full object-cover mb-2">
